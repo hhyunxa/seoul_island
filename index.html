@@ -1,0 +1,1146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>두근두근 블록섬 · 서울섬 데모</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#CFEAF6;--panel:#FFFAEA;--fg:#6B4F2E;--sub:#8A6B45;--shadow:rgba(107,79,46,.18);
+  --font:'Jua',sans-serif;--weight:400;--accent:#F2A73B;--accentFg:#FFFFFF;--areaBg:#DCF1FA;--areaFg:#23607A;
+  --bubble:46% 54% 50% 50% / 60% 60% 40% 40%;
+  --mm-sea:#8FD8E8;--mm-sand:#FFF1D0;--mm-grass:#B8E39A;--mm-ring:#3CB44A;--mm-noddle:#FFC4D3;--mm-bridge:#FFF8EC;--mm-me:#F2A73B;
+}
+body.dusk{
+  --bg:#F2B59A;--panel:#FBF3E4;--fg:#3A3150;--sub:#6E5F96;--shadow:rgba(30,22,48,.35);
+  --font:'Gowun Batang',serif;--weight:700;--accent:#3A3150;--accentFg:#FFD27A;--areaBg:#3A3150;--areaFg:#FFD27A;
+  --bubble:26px;
+  --mm-sea:#9C93D6;--mm-sand:#FCE1BE;--mm-grass:#C3D58A;--mm-ring:#5FAE5F;--mm-noddle:#F6D9B4;--mm-bridge:#FBF3E4;--mm-me:#FF8FA3;
+}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font);-webkit-user-select:none;user-select:none;touch-action:none}
+#c{position:fixed;inset:0;width:100vw;height:100vh;display:block;cursor:grab;outline:none}
+.hud{position:fixed;z-index:2;pointer-events:none}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border-radius:999px;box-shadow:0 4px 0 var(--shadow);font-weight:var(--weight);white-space:nowrap}
+#tl{left:20px;top:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+#zoneP{padding:8px 20px 8px 10px;font-size:20px}
+#area{background:var(--areaBg);color:var(--areaFg);border-radius:999px;padding:3px 12px;font-size:15px}
+#bell{padding:6px 16px;font-size:17px}
+.coin{width:16px;height:16px;border-radius:50%;background:#F7C544;box-shadow:inset 0 0 0 2px #D9A23B}
+#modes{left:50%;top:16px;transform:translateX(-50%);display:flex;gap:6px;background:var(--panel);border-radius:999px;padding:5px;box-shadow:0 4px 0 var(--shadow);pointer-events:auto}
+#modes button{font-family:inherit;font-weight:var(--weight);font-size:16px;border:none;border-radius:999px;padding:0 18px;min-height:40px;cursor:pointer;background:transparent;color:var(--fg)}
+#modes button[aria-pressed="true"]{background:var(--fg);color:var(--panel)}
+#toast{left:50%;top:78px;transform:translateX(-50%);background:var(--fg);color:var(--panel);border-radius:999px;padding:8px 22px;font-size:18px;font-weight:var(--weight);white-space:nowrap;opacity:0;transition:opacity .25s}
+#toast.on{opacity:1}
+#ride{left:50%;top:126px;transform:translateX(-50%);padding:6px 10px 6px 16px;font-size:17px;display:none}
+#mapWrap{right:16px;top:14px;width:172px;height:172px;border-radius:50%;background:var(--panel);padding:6px;box-sizing:border-box;box-shadow:0 4px 0 var(--shadow)}
+#mapWrap svg{display:block;border-radius:50%}
+.mm-sea{fill:var(--mm-sea)}.mm-sand{fill:var(--mm-sand)}.mm-grass{fill:var(--mm-grass)}.mm-noddle{fill:var(--mm-noddle)}.mm-me{fill:var(--mm-me)}
+.mm-river{fill:none;stroke:var(--mm-sea)}.mm-ring{fill:none;stroke:var(--mm-ring)}.mm-bridge{stroke:var(--mm-bridge)}
+#clock{left:20px;bottom:18px;background:var(--panel);border-radius:26px;padding:10px 22px 12px;box-shadow:0 4px 0 var(--shadow);display:flex;flex-direction:column}
+#clock small{font-size:14px;font-weight:var(--weight);color:var(--sub)}
+#clock b{font-size:38px;line-height:1.08;font-weight:var(--weight)}
+#clock b span{font-size:17px}
+#help{right:16px;bottom:18px;background:var(--panel);opacity:.95;border-radius:18px;padding:10px 16px;font-family:'Gowun Dodum',sans-serif;font-size:14px;line-height:1.9;box-shadow:0 4px 0 var(--shadow);display:flex;flex-direction:column}
+#help b{font-weight:400;background:var(--fg);color:var(--panel);border-radius:6px;padding:1px 7px}
+#pad{right:24px;bottom:104px;width:156px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;pointer-events:auto}
+#pad button{height:48px;border:none;border-radius:14px;background:var(--panel);color:var(--fg);box-shadow:0 4px 0 var(--shadow);cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:none}
+#hint{left:50%;top:50%;transform:translate(-50%,-50%);background:var(--panel);border-radius:24px;padding:18px 28px;font-size:20px;font-weight:var(--weight);box-shadow:0 6px 0 var(--shadow);text-align:center;line-height:1.6}
+#prompt{left:50%;bottom:120px;transform:translateX(-50%);pointer-events:auto;font-family:inherit;font-weight:var(--weight);font-size:18px;color:var(--fg);background:var(--panel);border:none;border-radius:999px;padding:6px 20px 6px 8px;min-height:46px;display:none;align-items:center;gap:8px;box-shadow:0 4px 0 var(--shadow);cursor:pointer}
+#prompt .k{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accentFg);display:inline-flex;align-items:center;justify-content:center}
+#dialog{left:50%;bottom:26px;transform:translateX(-50%);width:min(640px,calc(100vw - 32px));pointer-events:auto;display:none}
+#dlgName{position:absolute;top:-14px;left:50px;z-index:1;color:#FFFFFF;font-size:20px;font-weight:var(--weight);padding:6px 20px;border-radius:999px;transform:rotate(-4deg);box-shadow:0 3px 0 var(--shadow)}
+#dlgText{display:block;width:100%;text-align:left;font-family:inherit;font-weight:var(--weight);font-size:21px;line-height:1.55;color:var(--fg);background:var(--panel);border:none;border-radius:var(--bubble);padding:32px 60px 28px;min-height:120px;box-shadow:0 6px 0 var(--shadow);cursor:pointer;white-space:pre-line}
+#loading{inset:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+@media (max-width:760px){#help{display:none}#mapWrap{width:120px;height:120px}#mapWrap svg{width:108px;height:108px}#zoneP{font-size:16px}}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="서울섬 3D 데모 화면. WASD 또는 클릭으로 이동, 드래그로 시점 회전"></canvas>
+
+<div class="hud" id="loading">서울섬을 불러오는 중…</div>
+
+<div class="hud" id="tl">
+  <span class="pill" id="zoneP"><span id="area">한강</span><span id="zone">노들섬 광장</span></span>
+  <span class="pill" id="bell"><span class="coin"></span>12,400 벨</span>
+</div>
+
+<div class="hud" id="modes">
+  <button type="button" id="btnDay" aria-pressed="true">낮 12:30</button>
+  <button type="button" id="btnDusk" aria-pressed="false">노을 6:40</button>
+</div>
+
+<div class="hud" id="toast"></div>
+<div class="hud pill" id="ride"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="3" width="14" height="13" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M5 10 H19 M8.5 21 L10 16 M15.5 21 L14 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span>초록 순환열차</span><span id="rideT" style="background:#3CB44A;color:#FFFFFF;border-radius:999px;padding:2px 12px;font-size:15px"></span></div>
+
+<div class="hud" id="mapWrap">
+  <svg viewBox="0 0 700 700" width="160" height="160" aria-hidden="true">
+    <rect class="mm-sea" width="700" height="700"></rect>
+    <path class="mm-sand" d="M350 60 C450 55 560 95 610 170 C660 245 655 330 640 400 C625 480 600 560 520 610 C450 655 400 660 350 655 C280 660 200 640 140 590 C80 540 55 460 60 380 C65 290 85 200 150 135 C210 80 270 62 350 60 Z"></path>
+    <path class="mm-grass" transform="translate(350 360) scale(0.94) translate(-350 -360)" d="M350 60 C450 55 560 95 610 170 C660 245 655 330 640 400 C625 480 600 560 520 610 C450 655 400 660 350 655 C280 660 200 640 140 590 C80 540 55 460 60 380 C65 290 85 200 150 135 C210 80 270 62 350 60 Z"></path>
+    <path class="mm-river" d="M10 362 C150 330 250 395 350 375 C450 355 560 400 695 368" stroke-width="104"></path>
+    <circle class="mm-ring" cx="350" cy="375" r="185" stroke-width="12"></circle>
+    <ellipse class="mm-noddle" cx="350" cy="377" rx="80" ry="34"></ellipse>
+    <path class="mm-bridge" d="M212 296 V438 M350 300 V454 M476 302 V446" stroke-width="16"></path>
+    <g id="me" transform="translate(350 395)"><path class="mm-me" d="M0 -26 L20 18 L0 8 L-20 18 Z" stroke="#FFFFFF" stroke-width="7" stroke-linejoin="round"></path></g>
+  </svg>
+</div>
+
+<div class="hud" id="clock"><small>4월 12일 · 토요일 · 서울섬</small><b><em id="clockT" style="font-style:normal">12:30</em> <span>PM</span></b></div>
+
+<div class="hud" id="help">
+  <span><b>WASD</b> 이동 <b style="margin-left:6px">Shift</b> 달리기</span>
+  <span><b>클릭</b> 그곳으로 걷기 <b style="margin-left:6px">드래그</b> 시점</span>
+  <span><b>E</b> 말걸기 · 열차 타기 <b style="margin-left:6px">휠</b> 확대</span>
+</div>
+
+<div class="hud" id="pad">
+  <span></span>
+  <button type="button" data-k="w" aria-label="앞으로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 15 L12 9 L18 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  <span></span>
+  <button type="button" data-k="a" aria-label="왼쪽으로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 6 L9 12 L15 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  <button type="button" data-k="s" aria-label="뒤로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 9 L12 15 L18 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  <button type="button" data-k="d" aria-label="오른쪽으로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 6 L15 12 L9 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+</div>
+
+<div class="hud" id="hint">WASD로 서울섬을 걸어 보세요<br>땅을 클릭해도 그곳으로 걸어가요</div>
+
+<button type="button" class="hud" id="prompt"><span class="k">E</span><span id="promptT"></span></button>
+
+<div class="hud" id="dialog">
+  <span id="dlgName"></span>
+  <button type="button" id="dlgText"></button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  if (!window.THREE) { $('loading').textContent = '3D 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'; return; }
+  const THREE = window.THREE;
+
+  const game = {
+    mode: 'A', talk: null, prompt: '', hint: true, zone: '', area: '',
+    keys: {}, tap: {}, goal: null, T: 0, mmT: 0,
+    cam: { yaw: 0, pitch: 0.55, dist: 14, tx: 0, ty: 1, tz: 5.8 },
+    pl: { x: 0, y: 0.16, z: 5.8, rot: Math.PI, walk: 0 }
+  };
+
+  /* ---------- 렌더러 ---------- */
+  const canvas = $('c');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+  catch (err) { $('loading').textContent = '이 브라우저에서는 3D(WebGL)를 켤 수 없어요'; return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.05, 900);
+  const resize = () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.fov = camera.aspect < 0.9 ? 62 : 46; camera.updateProjectionMatrix(); };
+  addEventListener('resize', resize); resize();
+  const curveU = { value: 0.0022 };
+  game.renderer = renderer; game.camera = camera; game.curveU = curveU;
+
+  /* ---------- HUD ---------- */
+  let toastTimer = 0;
+  const showToast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2200); };
+  const hideHint = () => { if (game.hint) { game.hint = false; $('hint').style.display = 'none'; } };
+  const setPrompt = (txt) => {
+    if (txt === game.prompt) return;
+    game.prompt = txt;
+    $('promptT').textContent = txt;
+    $('prompt').style.display = txt && !game.talk ? 'inline-flex' : 'none';
+  };
+  const openTalk = (n) => {
+    game.talk = n;
+    $('dlgName').textContent = n.name; $('dlgName').style.background = n.tag;
+    $('dlgText').textContent = n.lines.join('\n');
+    $('dialog').style.display = 'block'; $('prompt').style.display = 'none';
+  };
+  const closeTalk = () => { game.talk = null; $('dialog').style.display = 'none'; if (game.prompt) $('prompt').style.display = 'inline-flex'; };
+
+  const interact = () => {
+    if (game.talk) { closeTalk(); return; }
+    const t = game.target;
+    if (!t) return;
+    if (t.kind === 'npc') openTalk(t.o);
+    else if (t.kind === 'station') startRide(t.o);
+  };
+
+  /* ---------- 열차 타기: 도착 → 탑승 → 운행 → 하차 ---------- */
+  const RR = 29.6, OFF = 3.1 / RR;
+  function startRide(st) {
+    const R = game.R, list = R.stations, i = list.indexOf(st), nx = list[(i + 1) % list.length];
+    const a0 = st.ang + OFF;
+    let a1 = nx.ang + OFF;
+    while (a1 <= a0 + 0.05) a1 += Math.PI * 2;
+    game.ride = { phase: 'arrive', t: 0, a0, a1, tx: nx.px, tz: nx.pz, toName: nx.name };
+    game.goal = null; game.keys = {}; game.tap = {};
+    hideHint();
+    setPrompt('');
+    $('rideT').textContent = '다음 역 · ' + nx.name + '역';
+    $('ride').style.display = 'inline-flex';
+    showToast('곧 열차가 들어와요~ 뿌우!');
+  }
+  function updateRide(dt) {
+    const r = game.ride, R = game.R, pl = game.pl, RC = R.rc, c = game.cam;
+    r.t += dt;
+    const easeIO = (u) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+    const easeOut = (u) => 1 - (1 - u) * (1 - u);
+    const carAt = (a) => [RC[0] + Math.cos(a - OFF) * RR, RC[1] + Math.sin(a - OFF) * RR];
+    let walking = false;
+    if (r.phase === 'arrive') {
+      const u = Math.min(1, r.t / 2.4);
+      R.trainA = r.a0 - 0.8 * (1 - easeOut(u));
+      if (u >= 1) { r.phase = 'board'; r.t = 0; r.bx = pl.x; r.bz = pl.z; showToast('탑승! 문이 닫힙니다~'); }
+    } else if (r.phase === 'board') {
+      const u = Math.min(1, r.t / 1.0), p = carAt(r.a0);
+      R.trainA = r.a0;
+      pl.x = r.bx + (p[0] - r.bx) * u; pl.z = r.bz + (p[1] - r.bz) * u;
+      pl.rot = Math.atan2(p[0] - r.bx, p[1] - r.bz); walking = true;
+      if (u >= 1) { r.phase = 'ride'; r.t = 0; r.dur = Math.max(5, (r.a1 - r.a0) * 6); }
+    } else if (r.phase === 'ride') {
+      const u = Math.min(1, r.t / r.dur);
+      R.trainA = r.a0 + (r.a1 - r.a0) * easeIO(u);
+      const p = carAt(R.trainA);
+      pl.x = p[0]; pl.z = p[1]; pl.rot = -(R.trainA - OFF);
+      const m = R.trainA - OFF, want = Math.atan2(Math.cos(m), Math.sin(m));
+      let dy = want - c.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      c.yaw += dy * (1 - Math.exp(-1.6 * dt));
+      c.pitch += (0.8 - c.pitch) * (1 - Math.exp(-1.6 * dt));
+      c.dist += (13 - c.dist) * (1 - Math.exp(-1.6 * dt));
+      if (u >= 1) { r.phase = 'alight'; r.t = 0; r.bx = pl.x; r.bz = pl.z; showToast(r.toName + '역 도착! 띵동~'); }
+    } else if (r.phase === 'alight') {
+      const u = Math.min(1, r.t / 1.0);
+      R.trainA = r.a1;
+      pl.x = r.bx + (r.tx - r.bx) * u; pl.z = r.bz + (r.tz - r.bz) * u;
+      pl.rot = Math.atan2(r.tx - r.bx, r.tz - r.bz); walking = true;
+      c.pitch += (0.55 - c.pitch) * (1 - Math.exp(-3 * dt));
+      if (u >= 1) { game.ride = null; $('ride').style.display = 'none'; }
+    }
+    game.trainA = R.trainA;
+    return walking;
+  }
+
+  const switchMode = (m) => {
+    if (m === game.mode) return;
+    game.mode = m;
+    document.body.classList.toggle('dusk', m === 'C');
+    $('btnDay').setAttribute('aria-pressed', String(m === 'A'));
+    $('btnDusk').setAttribute('aria-pressed', String(m === 'C'));
+    $('clockT').textContent = m === 'A' ? '12:30' : '6:40';
+    buildScene(m);
+    showToast(m === 'A' ? '낮 12:30 · 맑음' : '노을 6:40 · 불빛이 켜져요');
+    canvas.focus({ preventScroll: true });
+  };
+  $('btnDay').addEventListener('click', () => switchMode('A'));
+  $('btnDusk').addEventListener('click', () => switchMode('C'));
+  $('prompt').addEventListener('click', () => { interact(); canvas.focus({ preventScroll: true }); });
+  $('dlgText').addEventListener('click', () => { closeTalk(); canvas.focus({ preventScroll: true }); });
+
+  /* ---------- 입력: 키보드 ---------- */
+  const MOVE = { w: 1, a: 1, s: 1, d: 1, arrowup: 1, arrowdown: 1, arrowleft: 1, arrowright: 1 };
+  addEventListener('keydown', (e) => {
+    const k = (e.key || '').toLowerCase();
+    if (k === 'e' || k === ' ' || k === 'enter') { if (!e.repeat && !game.ride) interact(); e.preventDefault(); return; }
+    if (k === 'shift') { game.keys.shift = true; return; }
+    if (k === 'escape' && game.talk) { closeTalk(); return; }
+    if (MOVE[k]) { game.keys[k] = true; game.tap[k] = performance.now(); game.goal = null; hideHint(); e.preventDefault(); }
+  });
+  addEventListener('keyup', (e) => { game.keys[(e.key || '').toLowerCase()] = false; });
+  addEventListener('blur', () => { game.keys = {}; });
+
+  /* ---------- 입력: 마우스/터치 ---------- */
+  let drag = null;
+  canvas.addEventListener('pointerdown', (e) => {
+    drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: Date.now() };
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    canvas.focus({ preventScroll: true });
+    hideHint();
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const c = game.cam;
+    c.yaw -= (e.clientX - drag.x) * 0.006;
+    c.pitch = Math.min(1.15, Math.max(0.25, c.pitch + (e.clientY - drag.y) * 0.004));
+    drag.x = e.clientX; drag.y = e.clientY;
+  });
+  const endDrag = (e) => {
+    const d = drag; drag = null;
+    if (!d) return;
+    if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 6 && Date.now() - d.t < 500) clickMove(e.clientX, e.clientY);
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', () => { drag = null; });
+  canvas.addEventListener('wheel', (e) => { game.cam.dist = Math.min(28, Math.max(7, game.cam.dist + e.deltaY * 0.01)); e.preventDefault(); }, { passive: false });
+  document.querySelectorAll('#pad button').forEach((b) => {
+    const k = b.dataset.k;
+    const on = (e) => { e.preventDefault(); game.keys[k] = true; game.goal = null; hideHint(); };
+    const off = () => { game.keys[k] = false; };
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+  });
+
+  function clickMove(cx, cy) {
+    if (!game.R || game.ride) return;
+    if (game.talk) { closeTalk(); return; }
+    const rc = canvas.getBoundingClientRect();
+    camera.updateMatrixWorld();
+    const v = new THREE.Vector3((cx - rc.left) / rc.width * 2 - 1, -((cy - rc.top) / rc.height * 2 - 1), 0.5).applyMatrix4(camera.projectionMatrixInverse).normalize();
+    const c = curveU.value, q = new THREE.Vector3();
+    const wy = (t) => { const z = v.z * t; q.set(v.x * t, v.y * t + c * z * z, z).applyMatrix4(camera.matrixWorld); return q.y; };
+    let prev = 0.5, hit = -1;
+    for (let t = 0.5; t < 260; t += 0.5) { if (wy(t) <= 0.05) { hit = t; break; } prev = t; }
+    if (hit < 0) return;
+    let lo = prev, hi = hit;
+    for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (wy(m) <= 0.05) hi = m; else lo = m; }
+    wy(hi);
+    game.goal = { x: q.x, z: q.z, t: 0 };
+    const mk = game.R.marker;
+    if (mk) { mk.visible = true; mk.position.set(q.x, 0.25, q.z); }
+  }
+
+  /* ---------- 씬 ---------- */
+  function disposeScene() {
+    if (!game.S) return;
+    game.S.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      const ms = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      ms.forEach((m) => { if (m.map) m.map.dispose(); if (m.gradientMap) m.gradientMap.dispose(); m.dispose(); });
+    });
+    if (game.S.background && game.S.background.dispose) game.S.background.dispose();
+    game.S = null;
+  }
+
+  function buildScene(mode) {
+    disposeScene();
+    const isA = mode === 'A';
+    const P = isA ? {
+      sky: [[0, '#8CCDEF'], [0.5, '#BFE6F7'], [1, '#E2F4FB']], fog: 0xe2f4fb, fogN: 60, fogF: 150,
+      sea: 0x8fd8e8, shallow: 0xb9ebf2, foam: 0xffffff, sand: 0xfff1d0, bank: 0xd3edb8, grass: '#b8e39a', grassDk: '#9fd17f', grassLt: '#c9eeb0',
+      river: '#8fd8e8', path: 0xfff4dc, wood: 0xe9b98f, woodDk: 0xc99468, mount: [0x8cc77a, 0xa6d88e, 0xe6f6d8],
+      treeA: [0xffb7c8, 0xffa3b9, 0xffe3ea], treeB: [0x7fcb98, 0x6bba86, 0xbfeccc], trunk: 0xb58965,
+      wall: 0xfff8ec, roofH: 0x7f8fa6, roofHouse: 0xff8fa3, red: 0xe2574c, win: 0x9bd8f5, door: 0xb07d55,
+      stripeA: '#ff8fa3', stripeB: '#ffffff', rail: 0x3cb44a, bed: 0xfff4dc, sleeper: 0xc99468, trainBody: 0x3cb44a, trainWin: 0xffffff,
+      br: [0x7fcb98, 0xff8fa3, 0xc3a6ff], domes: [0xffc4d3, 0xffe7a0, 0xbfe6f7], gold: 0xffd98a, glass: 0xcde7f5,
+      ring: 0xc3a6ff, pitch: 0x7fcb98, track: 0xffc4d3, hill: 0x9ed487, pod: 0xffb7c8,
+      flower: [0xffffff, 0xffd166, 0xff8fa3, 0xc3a6ff, 0xffffff], gingham: ['#fffaf2', 'rgba(255,170,190,0.5)'],
+      signBg: '#fff6dc', signFg: '#6b4f2e', signFont: '56px Jua, sans-serif',
+      hemi: [0xffffff, 0x9ccf7a, 0.85], dir: [0xfff1d6, 0.6, 30, 50, 25], amb: [0xffffff, 0.12], shadow: [0x2c4a2a, 0.16]
+    } : {
+      sky: [[0, '#7A6BB5'], [0.42, '#E59FA8'], [0.78, '#FFC59C'], [1, '#FFD7AB']], fog: 0xffcfa6, fogN: 40, fogF: 130,
+      sea: 0x9c93d6, shallow: 0xb8aee6, foam: 0xfff1dc, sand: 0xfce1be, bank: 0xd7e19a, grass: '#c3d58a', grassDk: '#a9be72', grassLt: '#d7e19a',
+      river: '#9c93d6', path: 0xf6d9b4, wood: 0xb07a55, woodDk: 0x8a5e44, mount: [0x8ea35e, 0xa9be72, 0xf2c27b],
+      treeA: [0x7fa86a, 0x6a9459, 0xf2c27b], treeB: [0xf0a58c, 0xde8c78, 0xffd9b0], trunk: 0x8a5e44,
+      wall: 0xfbf3e4, roofH: 0x5b4a78, roofHouse: 0xc9705e, red: 0xc9705e, win: 0xffd27a, door: 0x6b4a3a,
+      stripeA: '#c9705e', stripeB: '#fbf3e4', rail: 0x8fd48f, bed: 0xf6d9b4, sleeper: 0x8a5e44, trainBody: 0x5fae5f, trainWin: 0xffe7a8,
+      br: [0x8a5e44, 0x8a5e44, 0x8a5e44], domes: [0xffb3c4, 0xffe29a, 0xb5e4ff], gold: 0xf2b84b, glass: 0xb8aee6,
+      ring: 0x7c6ba8, pitch: 0x8fbe72, track: 0xf2b880, hill: 0xa9be72, pod: 0xffd27a,
+      flower: [0xfff1dc, 0xffc86b, 0xf0a58c, 0xb8aee6, 0xfff1dc], gingham: ['#f6d9b4', 'rgba(226,188,147,0.8)'],
+      signBg: '#fbf3e4', signFg: '#3a3150', signFont: '700 50px "Gowun Batang", serif',
+      hemi: [0xffd9c0, 0x5b4a78, 0.62], dir: [0xffb98a, 0.95, -40, 16, -30], amb: [0x6a5a90, 0.2], shadow: [0x3a2a5a, 0.24]
+    };
+
+    const S = new THREE.Scene();
+    game.S = S;
+    const R = { sway: [], cols: [], cones: [], glows: [], flies: [], petals: null, npcs: [], ducks: [], karts: [], cars: [], stations: [] };
+    game.R = R;
+    const SC = 0.16;
+    const W = (p) => [(p[0] - 350) * SC, (p[1] - 360) * SC];
+    const bez = (a, b, c, d, t) => { const u = 1 - t; return [u * u * u * a[0] + 3 * u * u * t * b[0] + 3 * u * t * t * c[0] + t * t * t * d[0], u * u * u * a[1] + 3 * u * u * t * b[1] + 3 * u * t * t * c[1] + t * t * t * d[1]]; };
+
+    const bend = (sh) => {
+      sh.uniforms.uCurve = curveU;
+      sh.vertexShader = 'uniform float uCurve;\n' + sh.vertexShader.replace('#include <project_vertex>', [
+        'vec4 mvPosition = vec4( transformed, 1.0 );',
+        '#ifdef USE_INSTANCING',
+        'mvPosition = instanceMatrix * mvPosition;',
+        '#endif',
+        'mvPosition = modelViewMatrix * mvPosition;',
+        'mvPosition.y -= mvPosition.z * mvPosition.z * uCurve;',
+        'gl_Position = projectionMatrix * mvPosition;'
+      ].join('\n'));
+    };
+    const spriteBend = (sh) => {
+      sh.uniforms.uCurve = curveU;
+      sh.vertexShader = 'uniform float uCurve;\n' + sh.vertexShader.replace('gl_Position = projectionMatrix * mvPosition;', 'mvPosition.y -= mvPosition.z * mvPosition.z * uCurve;\n\tgl_Position = projectionMatrix * mvPosition;');
+    };
+    const grad = new THREE.DataTexture(new Uint8Array([150, 210, 255]), 3, 1, renderer.capabilities.isWebGL2 ? THREE.RedFormat : THREE.LuminanceFormat);
+    grad.minFilter = THREE.NearestFilter; grad.magFilter = THREE.NearestFilter; grad.generateMipmaps = false; grad.needsUpdate = true;
+    const mc = {};
+    const M = (c, o) => {
+      if (!o && mc[c]) return mc[c];
+      const m = new THREE.MeshToonMaterial(Object.assign({ color: c, gradientMap: grad }, o || {}));
+      m.onBeforeCompile = bend;
+      if (!o) mc[c] = m;
+      return m;
+    };
+    const bc = {};
+    const MB = (o) => { const m = new THREE.MeshBasicMaterial(o); m.onBeforeCompile = bend; return m; };
+    const MBc = (c) => bc[c] || (bc[c] = MB({ color: c }));
+    const gc = {};
+    const G = (k, f) => gc[k] || (gc[k] = f());
+    const sph = (r, a = 16, b = 12) => G('s' + [r, a, b], () => new THREE.SphereGeometry(r, a, b));
+    const cyl = (t, b, h, s = 12) => G('c' + [t, b, h, s], () => new THREE.CylinderGeometry(t, b, h, s));
+    const cone = (r, h, s = 10) => G('k' + [r, h, s], () => new THREE.ConeGeometry(r, h, s));
+    const box = (w, h, d) => G('b' + [w, h, d], () => new THREE.BoxGeometry(w, h, d));
+    const add = (p, g, m, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); p.add(o); return o; };
+    const grp = (x, y, z, ry) => { const g = new THREE.Group(); g.position.set(x, y || 0, z); if (ry) g.rotation.y = ry; S.add(g); return g; };
+    const tex = (w, h, draw, rep) => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      draw(c.getContext('2d'), w, h);
+      const t = new THREE.CanvasTexture(c);
+      if (rep) { t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); }
+      t.anisotropy = 4;
+      return t;
+    };
+    let seed = 7;
+    const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const rr = (a, b) => a + (b - a) * rnd();
+
+    const shadowMat = MB({ color: P.shadow[0], transparent: true, opacity: P.shadow[1], depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    const blobGeo = G('blob', () => { const c = new THREE.CircleGeometry(1, 20); c.rotateX(-Math.PI / 2); return c; });
+    const blob = (p, r, y) => { const m = add(p, blobGeo, shadowMat, 0, (y || 0) + 0.035, 0); m.scale.set(r, 1, r); m.renderOrder = 1; return m; };
+    const glowTex = tex(64, 64, (g) => {
+      const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+      r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.3, 'rgba(255,255,255,0.5)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+    });
+    const glow = (parent, x, y, z, s, color, op) => {
+      const m = new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+      m.onBeforeCompile = spriteBend;
+      const sp = new THREE.Sprite(m); sp.position.set(x, y, z); sp.scale.set(s, s, 1); (parent || S).add(sp);
+      R.glows.push(sp);
+      return sp;
+    };
+    const lamp = (parent, x, y, z, s) => { add(parent || S, sph(0.14, 8, 6), MBc(0xffe7a8), x, y, z); if (!isA) glow(parent, x, y, z, s || 2.2, 0xffb867, 0.85); };
+
+    /* 하늘 · 빛 */
+    S.background = tex(1024, 576, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h * 0.55);
+      P.sky.forEach((s) => gr.addColorStop(s[0], s[1]));
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      if (isA) {
+        g.fillStyle = 'rgba(255,255,255,0.92)';
+        [[150, 62, 1], [470, 44, 1.2], [760, 84, 0.95], [940, 36, 0.7], [320, 120, 0.6]].forEach((c) => {
+          [[0, 0, 26], [26, -12, 32], [58, 0, 26], [30, 10, 26]].forEach((p) => { g.beginPath(); g.arc(c[0] + p[0] * c[2], c[1] + p[1] * c[2], p[2] * c[2], 0, Math.PI * 2); g.fill(); });
+        });
+      } else {
+        const sg = g.createRadialGradient(230, 110, 10, 230, 110, 210);
+        sg.addColorStop(0, 'rgba(255,240,200,0.95)'); sg.addColorStop(0.25, 'rgba(255,214,160,0.55)'); sg.addColorStop(1, 'rgba(255,200,160,0)');
+        g.fillStyle = sg; g.fillRect(0, 0, w, h);
+        g.fillStyle = '#FFEBC0'; g.beginPath(); g.arc(230, 110, 34, 0, Math.PI * 2); g.fill();
+        g.fillStyle = 'rgba(255,175,165,0.55)';
+        [[620, 66, 170, 13], [820, 110, 120, 9], [430, 34, 110, 8], [920, 52, 90, 7]].forEach((c) => { g.beginPath(); g.ellipse(c[0], c[1], c[2], c[3], 0, 0, Math.PI * 2); g.fill(); });
+      }
+    });
+    S.fog = new THREE.Fog(P.fog, P.fogN, P.fogF);
+    S.add(new THREE.HemisphereLight(P.hemi[0], P.hemi[1], P.hemi[2]));
+    const dl = new THREE.DirectionalLight(P.dir[0], P.dir[1]); dl.position.set(P.dir[2], P.dir[3], P.dir[4]); S.add(dl);
+    S.add(new THREE.AmbientLight(P.amb[0], P.amb[1]));
+
+    /* 섬 모양: 2D 맵의 섬 윤곽 그대로 */
+    const ISL = [[[350, 60], [450, 55], [560, 95], [610, 170]], [[610, 170], [660, 245], [655, 330], [640, 400]], [[640, 400], [625, 480], [600, 560], [520, 610]], [[520, 610], [450, 655], [400, 660], [350, 655]], [[350, 655], [280, 660], [200, 640], [140, 590]], [[140, 590], [80, 540], [55, 460], [60, 380]], [[60, 380], [65, 290], [85, 200], [150, 135]], [[150, 135], [210, 80], [270, 62], [350, 60]]];
+    const ip = [];
+    ISL.forEach((s) => { for (let i = 0; i < 40; i++) { const p = W(bez(s[0], s[1], s[2], s[3], i / 40)); ip.push([Math.atan2(p[1], p[0]), Math.hypot(p[0], p[1])]); } });
+    ip.sort((a, b) => a[0] - b[0]);
+    const RW = (a) => {
+      const n = ip.length;
+      if (a <= ip[0][0] || a >= ip[n - 1][0]) {
+        const A = ip[n - 1], B = ip[0], span = B[0] + Math.PI * 2 - A[0];
+        const t = ((a < ip[0][0] ? a + Math.PI * 2 : a) - A[0]) / span;
+        return A[1] + (B[1] - A[1]) * t;
+      }
+      let lo = 0, hi = n - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ip[m][0] <= a) lo = m; else hi = m; }
+      const A = ip[lo], B = ip[hi];
+      return A[1] + (B[1] - A[1]) * ((a - A[0]) / ((B[0] - A[0]) || 1));
+    };
+    const RAt = (x, z) => RW(Math.atan2(z, x));
+    R.RAt = RAt;
+    const blobG = (s, seg) => {
+      const g = new THREE.RingGeometry(0.001, 1, 180, seg || 36);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), r = RW(Math.atan2(-y, x)) * s; p.setXY(i, x * r, y * r); }
+      g.rotateX(-Math.PI / 2); g.computeVertexNormals();
+      return g;
+    };
+    const grassDraw = (g, w, h) => {
+      g.fillStyle = P.grass; g.fillRect(0, 0, w, h);
+      g.fillStyle = P.grassLt; g.globalAlpha = 0.55;
+      for (let i = 0; i < 24; i++) { g.beginPath(); g.ellipse(rr(0, w), rr(0, h), rr(10, 26), rr(6, 14), rr(0, 3), 0, Math.PI * 2); g.fill(); }
+      g.globalAlpha = 1; g.strokeStyle = P.grassDk; g.lineWidth = 2.2; g.lineCap = 'round';
+      for (let i = 0; i < 70; i++) { const x = rr(4, w - 4), y = rr(4, h - 8); g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x - 1, y + 5); g.moveTo(x + 3, y); g.lineTo(x + 1, y + 5); g.stroke(); }
+    };
+    add(S, G('sea', () => { const g = new THREE.PlaneGeometry(1000, 1000, 200, 200); g.rotateX(-Math.PI / 2); return g; }), M(P.sea), 0, -0.55, 0);
+    add(S, blobG(1.17, 30), M(P.shallow), 0, -0.42, 0);
+    add(S, blobG(1.075, 30), M(P.foam), 0, -0.22, 0);
+    add(S, blobG(1.055, 30), M(P.sand), 0, -0.1, 0);
+    add(S, blobG(0.97, 44), M(0xffffff, { map: tex(256, 256, grassDraw, [18, 18]) }), 0, 0, 0);
+
+    /* 한강 */
+    const RIV = [[[10, 362], [150, 330], [250, 395], [350, 375]], [[350, 375], [450, 355], [560, 400], [695, 368]]];
+    const rp = [];
+    RIV.forEach((s, si) => { for (let i = si ? 1 : 0; i <= 90; i++) rp.push(W(bez(s[0], s[1], s[2], s[3], i / 90))); });
+    const rzAt = (x) => {
+      if (x <= rp[0][0]) return rp[0][1];
+      if (x >= rp[rp.length - 1][0]) return rp[rp.length - 1][1];
+      let lo = 0, hi = rp.length - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (rp[m][0] <= x) lo = m; else hi = m; }
+      const A = rp[lo], B = rp[hi];
+      return A[1] + (B[1] - A[1]) * ((x - A[0]) / ((B[0] - A[0]) || 1));
+    };
+    R.rzAt = rzAt;
+    const rpts = rp.filter((p) => Math.hypot(p[0], p[1]) < RAt(p[0], p[1]) * 1.07);
+    const ribbon = (pts, w, y, mat) => {
+      const pos = [], uv = [], idx = [];
+      let acc = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+        let tx = b[0] - a[0], tz = b[1] - a[1];
+        const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+        const nx = -tz, nz = tx;
+        if (i) acc += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        for (let s = -2; s <= 2; s++) { pos.push(pts[i][0] + nx * s * w / 4, y, pts[i][1] + nz * s * w / 4); uv.push(acc / 6, (s + 2) / 4); }
+        if (i) { const o = (i - 1) * 5; for (let k = 0; k < 4; k++) idx.push(o + k, o + k + 1, o + 5 + k, o + k + 1, o + 6 + k, o + 5 + k); }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      g.setIndex(idx); g.computeVertexNormals();
+      const m = new THREE.Mesh(g, mat); S.add(m);
+      return m;
+    };
+    ribbon(rpts, 22, 0.02, M(P.sand, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1, side: THREE.DoubleSide }));
+    ribbon(rpts, 19.8, 0.03, M(P.bank, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, side: THREE.DoubleSide }));
+    const waterTex = tex(256, 64, (g, w, h) => {
+      g.fillStyle = P.river; g.fillRect(0, 0, w, h);
+      g.strokeStyle = isA ? 'rgba(255,255,255,0.6)' : 'rgba(255,217,168,0.75)'; g.lineWidth = 3; g.lineCap = 'round';
+      for (let i = 0; i < 16; i++) { const x = rr(10, w - 50), y = rr(6, h - 6); g.beginPath(); g.moveTo(x, y); g.lineTo(x + rr(16, 40), y); g.stroke(); }
+    }, [1, 1]);
+    R.waterTex = waterTex;
+    ribbon(rpts, 16.6, 0.045, MB({ map: waterTex, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, side: THREE.DoubleSide }));
+
+    /* 노들섬 */
+    const ellipseG = G('ell', () => { const g = new THREE.RingGeometry(0.001, 1, 64, 8); g.rotateX(-Math.PI / 2); return g; });
+    const NC = [0, 2.7];
+    R.noddle = { x: NC[0], z: NC[1], rx: 12.6, rz: 5.1 };
+    add(S, ellipseG, M(P.sand, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), NC[0], 0.1, NC[1]).scale.set(13.4, 1, 5.8);
+    add(S, ellipseG, M(0xffffff, { map: tex(128, 128, grassDraw, [3, 3]), polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5 }), NC[0], 0.14, NC[1]).scale.set(12.2, 1, 4.6);
+    const plazaTex = tex(256, 256, (g, w, h) => {
+      g.fillStyle = P.gingham[0]; g.fillRect(0, 0, w, h);
+      g.fillStyle = P.gingham[1];
+      if (isA) { for (let i = 0; i < 16; i++) { g.fillRect(i * 16, 0, 8, h); g.fillRect(0, i * 16, w, 8); } }
+      else { g.strokeStyle = P.gingham[1]; g.lineWidth = 3; for (let i = 0; i < 16; i++) { g.strokeRect(i * 16, 0, 16, h); g.strokeRect(0, i * 16, w, 16); } }
+    });
+    add(S, ellipseG, M(0xffffff, { map: plazaTex, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 }), -0.6, 0.16, NC[1] + 0.3).scale.set(7, 1, 2.9);
+    const tent = grp(6.9, 0.14, 1.0, 0.2);
+    const stripeTex = tex(256, 64, (g, w, h) => { for (let i = 0; i < 16; i++) { g.fillStyle = i % 2 ? P.stripeA : P.stripeB; g.fillRect(i * 16, 0, 16, h); } });
+    add(tent, cyl(1.5, 1.6, 1.4, 18), M(P.wall), 0, 0.7, 0);
+    add(tent, cone(2.0, 1.6, 18), M(0xffffff, { map: stripeTex }), 0, 2.2, 0);
+    add(tent, box(0.9, 1.1, 0.1), M(P.door), 0, 0.55, 1.55);
+    blob(tent, 1.9);
+    R.cols.push({ x: 6.9, z: 1.0, r: 2.0 });
+    const signTex = tex(512, 256, (g, w, h) => {
+      g.fillStyle = P.signBg; g.fillRect(0, 0, w, h);
+      g.strokeStyle = isA ? '#c9a77a' : '#c9a98a'; g.lineWidth = 16; g.strokeRect(8, 8, w - 16, h - 16);
+      g.fillStyle = P.signFg; g.font = P.signFont; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('서울섬 · 노들섬', w / 2, h / 2 + 4);
+    });
+    const sg = grp(-3.2, 0.14, 1.4);
+    add(sg, cyl(0.07, 0.07, 1.2, 8), M(P.woodDk), -0.7, 0.6, 0);
+    add(sg, cyl(0.07, 0.07, 1.2, 8), M(P.woodDk), 0.7, 0.6, 0);
+    const woodM = M(P.wood);
+    add(sg, box(2.0, 1.0, 0.12), [woodM, woodM, woodM, woodM, M(0xffffff, { map: signTex }), woodM], 0, 1.35, 0.05);
+    R.cols.push({ x: -3.2, z: 1.4, r: 1.2 });
+    if (!isA) {
+      [[-5, 0.8], [-1, 0.2], [3, 0.6], [-4, 4.6], [2, 4.8]].forEach((p) => { add(S, cyl(0.06, 0.06, 2.2, 6), M(P.woodDk), p[0], 1.24, NC[1] + p[1] - 2.7); lamp(S, p[0], 2.4, NC[1] + p[1] - 2.7, 2.4); });
+      const pl = new THREE.PointLight(0xffb060, 1.0, 14, 2); pl.position.set(0, 2.5, NC[1]); S.add(pl);
+    }
+
+    /* 다리 */
+    const bridges = [
+      { x: -22.1, segs: [[-10.2, 12.5]], c: P.br[0] },
+      { x: 0, segs: [[-9.6, -2.6], [8.0, 15.0]], c: P.br[1] },
+      { x: 20.2, segs: [[-9.3, 13.8]], c: P.br[2] }
+    ];
+    R.bridges = bridges;
+    bridges.forEach((b) => b.segs.forEach((sgm) => {
+      const len = sgm[1] - sgm[0], mz = (sgm[0] + sgm[1]) / 2;
+      const g = grp(b.x, 0, mz);
+      add(g, box(3.4, 0.3, len), M(P.wall), 0, 0.32, 0);
+      for (const sx of [-1.65, 1.65]) {
+        add(g, box(0.18, 0.16, len), M(b.c), sx, 0.95, 0);
+        for (let z = -len / 2 + 0.2; z <= len / 2; z += 2.4) {
+          add(g, box(0.2, 0.6, 0.2), M(P.woodDk), sx, 0.62, z);
+          if (!isA) lamp(g, sx, 1.12, z, 1.8);
+        }
+      }
+      const wz = rzAt(b.x);
+      for (const dz of [-4.2, 0, 4.2]) { const zz = wz + dz - mz; if (Math.abs(zz) < len / 2 - 0.5) add(g, cyl(0.35, 0.35, 1.0, 10), M(P.woodDk), 0, -0.25, zz); }
+    }));
+    const arcCols = isA ? [0xffffff] : [0xff8fa3, 0xffc86b, 0xffe07a, 0x9ee0a8, 0x8fd3ff, 0xb8a6ff];
+    let ai = 0;
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < 5; k++) {
+        const z = -6 + k * 4.4;
+        const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(20.2 + side * 1.8, 0.9, z), new THREE.Vector3(20.2 + side * 3.8, 2.6, z + 0.6), new THREE.Vector3(20.2 + side * 5.2, 0.1, z + 1.4));
+        const c = arcCols[ai++ % arcCols.length];
+        add(S, new THREE.TubeGeometry(curve, 14, 0.09, 5, false), MB({ color: c, transparent: true, opacity: isA ? 0.75 : 0.95 }));
+        if (!isA) glow(S, 20.2 + side * 3.8, 1.9, z + 0.6, 2.4, c, 0.7);
+      }
+    }
+
+    /* 순환열차 선로 (정원) */
+    const RC = [0, 2.4], RR = 29.6;
+    R.rc = RC;
+    const rg = new THREE.RingGeometry(RR - 1.2, RR + 1.2, 240, 1); rg.rotateX(-Math.PI / 2);
+    add(S, rg, M(P.bed, { polygonOffset: true, polygonOffsetFactor: -7, polygonOffsetUnits: -7 }), RC[0], 0.1, RC[1]);
+    const slp = new THREE.InstancedMesh(box(0.26, 0.08, 1.9), M(P.sleeper, {}), 200);
+    const dm = new THREE.Object3D();
+    for (let i = 0; i < 200; i++) { const a = i / 200 * Math.PI * 2; dm.position.set(RC[0] + Math.cos(a) * RR, 0.16, RC[1] + Math.sin(a) * RR); dm.rotation.set(0, -a, 0); dm.updateMatrix(); slp.setMatrixAt(i, dm.matrix); }
+    S.add(slp);
+    for (const off of [-0.5, 0.5]) {
+      const tg = new THREE.TorusGeometry(RR + off, 0.07, 5, 260); tg.rotateX(Math.PI / 2);
+      add(S, tg, isA ? M(P.rail) : MBc(P.rail), RC[0], 0.24, RC[1]);
+    }
+    if (!isA) for (let i = 0; i < 36; i++) { const a = i / 36 * Math.PI * 2; glow(S, RC[0] + Math.cos(a) * (RR + 1.0), 0.35, RC[1] + Math.sin(a) * (RR + 1.0), 1.1, 0xb7f0a0, 0.6); }
+
+    /* 역 4곳 */
+    const stationDefs = [['한옥마을', [198, 269]], ['남산', [492, 256]], ['여의도', [219, 506]], ['서킷', [350, 560]]];
+    const stTex = (name) => tex(256, 96, (g, w, h) => {
+      g.fillStyle = isA ? '#3cb44a' : '#4f8f4f'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#ffffff'; g.font = isA ? '44px Jua, sans-serif' : '700 40px "Gowun Batang", serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(name + '역', w / 2, h / 2 + 3);
+    });
+    stationDefs.forEach((d) => {
+      const p = W(d[1]);
+      const a = Math.atan2(p[1] - RC[1], p[0] - RC[0]);
+      const ox = RC[0] + Math.cos(a) * (RR + 2.6), oz = RC[1] + Math.sin(a) * (RR + 2.6);
+      const g = grp(ox, 0, oz, -a + Math.PI / 2);
+      add(g, box(4.2, 0.3, 1.8), M(P.wall), 0, 0.15, 0);
+      add(g, box(4.4, 0.12, 2.0), M(isA ? 0x3cb44a : 0x5fae5f), 0, 2.2, 0);
+      for (const sx of [-1.9, 1.9]) add(g, cyl(0.07, 0.07, 2.0, 6), M(P.woodDk), sx, 1.2, -0.6);
+      const sm = M(0xffffff, { map: stTex(d[0]) });
+      add(g, box(1.6, 0.6, 0.08), [woodM, woodM, woodM, woodM, sm, sm], 0, 2.7, 0);
+      if (!isA) lamp(g, 0, 2.05, 0.6, 2.6);
+      const sx2 = RC[0] + Math.cos(a) * (RR + 4.6), sz2 = RC[1] + Math.sin(a) * (RR + 4.6);
+      R.stations.push({ name: d[0], x: ox, z: oz, px: sx2, pz: sz2, ang: (a + Math.PI * 2) % (Math.PI * 2) });
+      R.cols.push({ x: ox, z: oz, r: 1.2 });
+    });
+    R.stations.sort((p, q) => p.ang - q.ang);
+
+    /* 열차 */
+    const carGeo = box(1.5, 1.2, 2.8);
+    for (let i = 0; i < 3; i++) {
+      const g = new THREE.Group(); S.add(g);
+      add(g, carGeo, M(P.trainBody), 0, 0.85, 0);
+      add(g, box(1.56, 0.36, 2.2), isA ? M(P.trainWin) : MBc(P.trainWin), 0, 1.0, 0);
+      add(g, box(1.3, 0.14, 2.6), M(isA ? 0xffffff : 0xfbf3e4), 0, 1.52, 0);
+      for (const sx of [-0.55, 0.55]) for (const sz of [-0.9, 0.9]) add(g, cyl(0.22, 0.22, 0.14, 10), M(0x4a4a4a), sx, 0.25, sz).rotation.z = Math.PI / 2;
+      if (i === 0) {
+        for (const sx of [-0.32, 0.32]) add(g, sph(0.1, 8, 6), M(0x2b3a2b), sx, 1.0, 1.42);
+        for (const sx of [-0.5, 0.5]) add(g, sph(0.1, 8, 6), MB({ color: 0xff8fa3, transparent: true, opacity: 0.7 }), sx, 0.82, 1.41).scale.set(1, 0.6, 0.4);
+        if (!isA) glow(g, 0, 0.9, 1.9, 3.2, 0xfff1c8, 0.9);
+      }
+      if (!isA) { glow(g, 0.8, 1.0, 0, 1.8, 0xffd27a, 0.7); glow(g, -0.8, 1.0, 0, 1.8, 0xffd27a, 0.7); }
+      R.cars.push(g);
+    }
+    R.trainA = game.trainA || 1.9;
+
+    /* 나무 */
+    const roundTree = (x, z, cols, s, y) => {
+      const g = grp(x, y || 0, z, rr(0, 6.28)); g.scale.setScalar(s);
+      add(g, cyl(0.2, 0.28, 1.4, 8), M(P.trunk), 0, 0.7, 0);
+      const f = new THREE.Group(); f.position.y = 1.4; g.add(f);
+      add(f, sph(1.25, 14, 10), M(cols[0]), 0, 0.85, 0);
+      add(f, sph(0.9, 12, 9), M(cols[1]), 0.75, 0.45, 0.35);
+      add(f, sph(0.85, 12, 9), M(cols[1]), -0.7, 0.55, -0.3);
+      add(f, sph(0.55, 10, 8), M(cols[2]), -0.3, 1.55, 0.5);
+      blob(g, 1.35);
+      R.sway.push({ f, ph: rr(0, 6.28) });
+      R.cols.push({ x, z, r: 0.75 * s });
+    };
+
+    /* 북한산 */
+    [[-16, -46, 7.5, 11, 0], [-2, -48.5, 8.5, 14, 0], [12, -45, 6.5, 9, 0], [-9, -44.5, 5, 6, 1], [5, -44.5, 5, 6.5, 1]].forEach((m) => {
+      const c = add(S, cone(m[2], m[3], 9), M(P.mount[m[4]]), m[0], m[3] / 2 - 0.2, m[1]);
+      c.rotation.y = rr(0, 1);
+      if (!m[4]) add(S, cone(m[2] * 0.28, m[3] * 0.28, 9), M(P.mount[2]), m[0], m[3] - m[3] * 0.14 - 0.2, m[1]);
+      R.cones.push({ x: m[0], z: m[1], r: m[2] });
+    });
+
+    /* 궁궐 + 활터 */
+    const pc = W([330, 140]);
+    const pal = grp(pc[0], 0, pc[1]);
+    add(pal, box(19.6, 0.2, 9.4), M(isA ? 0xf5e6c8 : 0xf6d9b4), 0, 0.1, 0);
+    for (const sx of [-9.8, 9.8]) add(pal, box(0.4, 1.0, 9.4), M(P.wall), sx, 0.6, 0);
+    add(pal, box(19.6, 1.0, 0.4), M(P.wall), 0, 0.6, -4.7);
+    add(pal, box(7.6, 0.5, 3.6), M(isA ? 0xe2c59b : 0xe2bc93), 0, 0.35, -1.6);
+    add(pal, box(6.4, 1.8, 2.8), M(P.red), 0, 1.5, -1.6);
+    for (let i = -3; i <= 3; i += 1) add(pal, cyl(0.12, 0.12, 1.8, 8), M(isA ? 0xb5402f : 0x8a4a3e), i * 1.0, 1.5, -0.15);
+    if (!isA) for (const wx of [-2, 0, 2]) add(pal, box(1.0, 1.0, 0.05), MBc(0xffd27a), wx, 1.5, -0.18);
+    const roofG = G('roofH', () => { const g = new THREE.ConeGeometry(1, 1, 4, 1); g.rotateY(Math.PI / 4); return g; });
+    add(pal, roofG, M(P.roofH), 0, 3.2, -1.6).scale.set(6.4, 1.5, 3.0);
+    add(pal, box(8.4, 0.18, 4.2), M(P.roofH), 0, 2.45, -1.6);
+    add(pal, box(2.4, 1.2, 0.6), M(P.red), 0, 0.8, 4.4);
+    add(pal, roofG, M(P.roofH), 0, 1.75, 4.4).scale.set(2.2, 0.7, 0.9);
+    if (!isA) { lamp(pal, -4.5, 1.6, 4.0, 2.6); lamp(pal, 4.5, 1.6, 4.0, 2.6); }
+    R.cols.push({ x: pc[0], z: pc[1] - 1.6, r: 4.4 });
+    const tp = W([241, 187]);
+    const tgt = grp(tp[0], 0, tp[1], 0.5);
+    add(tgt, box(1.8, 2.4, 0.15), M(P.wall), 0, 1.6, 0);
+    add(tgt, cyl(0.55, 0.55, 0.06, 20), M(P.red), 0, 1.6, 0.1).rotation.x = Math.PI / 2;
+    for (const sx of [-0.6, 0.6]) add(tgt, cyl(0.07, 0.07, 1.2, 6), M(P.woodDk), sx, 0.5, -0.2);
+    R.cols.push({ x: tp[0], z: tp[1], r: 1.2 });
+
+    /* 남산 + 남산타워 */
+    const nm = W([420, 265]);
+    const hillG = G('hill', () => new THREE.SphereGeometry(1, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2));
+    add(S, hillG, M(P.hill), nm[0], 0, nm[1]).scale.set(6.4, 2.6, 4.2);
+    const tw = grp(nm[0], 2.4, nm[1]);
+    add(tw, cyl(0.28, 0.4, 6.4, 10), M(P.wall), 0, 3.2, 0);
+    add(tw, cyl(1.2, 0.9, 0.9, 16), isA ? M(P.pod) : MBc(P.pod), 0, 6.4, 0);
+    add(tw, cyl(0.9, 1.2, 0.5, 16), M(P.wall), 0, 7.05, 0);
+    add(tw, cyl(0.06, 0.1, 2.4, 6), M(P.red), 0, 8.5, 0);
+    if (!isA) { glow(tw, 0, 6.4, 0, 6, 0xffc86b, 0.8); glow(tw, 0, 9.6, 0, 1.6, 0xff8fa3, 0.9); }
+    R.cols.push({ x: nm[0], z: nm[1], r: 4.5 });
+
+    /* 마이홈 마을 (한옥 · 단독주택) */
+    const hanok = (pt) => {
+      const p = W(pt); const g = grp(p[0], 0, p[1], 0.15);
+      add(g, box(3.6, 0.3, 2.6), M(isA ? 0xe2c59b : 0xe2bc93), 0, 0.15, 0);
+      add(g, box(3.0, 1.4, 2.0), M(P.wall), 0, 1.0, 0);
+      for (const sx of [-1.2, 0, 1.2]) add(g, box(0.14, 1.4, 0.14), M(P.woodDk), sx, 1.0, 1.02);
+      for (const sx of [-0.6, 0.6]) add(g, box(0.7, 0.7, 0.05), isA ? M(0xfff1d0) : MBc(0xffd27a), sx, 1.05, 1.03);
+      add(g, roofG, M(P.roofH), 0, 2.3, 0).scale.set(3.0, 1.1, 2.2);
+      add(g, box(4.2, 0.12, 3.0), M(P.roofH), 0, 1.78, 0);
+      blob(g, 2.2);
+      R.cols.push({ x: p[0], z: p[1], r: 2.0 });
+    };
+    const house = (pt) => {
+      const p = W(pt); const g = grp(p[0], 0, p[1], -0.2);
+      add(g, box(2.6, 1.8, 2.2), M(P.wall), 0, 0.9, 0);
+      add(g, roofG, M(P.roofHouse), 0, 2.35, 0).scale.set(1.9, 1.1, 1.6);
+      add(g, box(0.36, 0.9, 0.36), M(P.woodDk), 0.7, 2.6, -0.4);
+      add(g, box(0.6, 1.0, 0.06), M(P.door), 0, 0.5, 1.11);
+      for (const sx of [-0.8, 0.8]) add(g, box(0.5, 0.5, 0.06), isA ? M(P.win) : MBc(P.win), sx, 1.15, 1.11);
+      add(g, cyl(0.05, 0.05, 0.8, 6), M(P.woodDk), 1.6, 0.4, 1.4);
+      add(g, box(0.4, 0.3, 0.5), M(isA ? 0xff8fa3 : 0xc9705e), 1.6, 0.9, 1.4);
+      blob(g, 1.9);
+      R.cols.push({ x: p[0], z: p[1], r: 1.8 });
+    };
+    hanok([160, 150]); house([180, 182]); hanok([136, 214]); house([100, 250]);
+    if (!isA) { [W([128, 184]), W([120, 236])].forEach((p) => { add(S, cyl(0.06, 0.06, 2, 6), M(P.woodDk), p[0], 1, p[1]); lamp(S, p[0], 2.1, p[1], 2.4); }); }
+
+    /* 야시장 */
+    [[232, 286], [260, 280], [288, 286]].forEach((pt, i) => {
+      const p = W(pt); const g = grp(p[0], 0, p[1], 0);
+      add(g, box(2.4, 0.9, 1.0), M(P.wall), 0, 0.45, 0.3);
+      for (const sx of [-1.15, 1.15]) add(g, cyl(0.05, 0.05, 2.0, 6), M(P.woodDk), sx, 1.0, 0.8);
+      const aw = add(g, box(2.7, 0.08, 1.4), M(0xffffff, { map: stripeTex }), 0, 2.0, 0.4); aw.rotation.x = 0.25;
+      add(g, sph(0.22, 8, 6), M([0xffd166, 0xff8fa3, 0x7bc8f6][i]), -0.5, 1.05, 0.3);
+      if (!isA) lamp(g, 0, 1.85, 1.1, 2.4);
+      R.cols.push({ x: p[0], z: p[1], r: 1.3 });
+    });
+    const bp = W([316, 258]);
+    const bcols = isA ? [0xff8fa3, 0x7bc8f6, 0xffd166, 0xc3a6ff] : [0xf0a58c, 0xb8aee6, 0xffd27a, 0xff8fa3];
+    for (let i = 0; i < 7; i++) {
+      const x = bp[0] + rr(-1.2, 1.2), z = bp[1] + rr(-0.8, 0.8), y = rr(2.4, 3.3);
+      add(S, sph(0.4, 12, 10), M(bcols[i % 4]), x, y, z).scale.set(1, 1.15, 1);
+      add(S, cyl(0.015, 0.015, y - 0.3, 4), M(P.woodDk), x, (y - 0.3) / 2, z);
+    }
+    if (!isA) { const pl = new THREE.PointLight(0xffb060, 1.0, 12, 2); pl.position.set(-14.4, 2.4, -11); S.add(pl); }
+
+    /* 오리배 선착장 + 오리배 */
+    const pier = grp(-7.8, 0, 12.6);
+    add(pier, box(2.8, 0.25, 6.2), M(P.wood), 0, 0.28, 0);
+    for (const sx of [-1.25, 1.25]) for (const sz of [-2.8, -0.8, 1.2]) add(pier, cyl(0.12, 0.12, 1.0, 6), M(P.woodDk), sx, -0.1, sz);
+    if (!isA) lamp(pier, 1.3, 1.3, -2.8, 2.6);
+    R.pier = { x0: -9.2, x1: -6.4, z0: 9.5, z1: 15.7 };
+    const duck = (pt, ry) => {
+      const p = W(pt); const g = grp(p[0], 0.1, p[1], ry);
+      const body = add(g, G('duckBody', () => new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2)), M(0xffd166), 0, 0, 0);
+      body.scale.set(1.0, 0.7, 1.4); body.rotation.x = Math.PI;
+      add(g, box(1.6, 0.25, 2.4), M(0xffd166), 0, 0.12, 0);
+      add(g, sph(0.5, 12, 10), M(0xffd166), 0, 1.0, 1.0);
+      add(g, cone(0.18, 0.4, 8), M(0xff9f43), 0, 0.95, 1.55).rotation.x = Math.PI / 2;
+      for (const sx of [-0.2, 0.2]) add(g, sph(0.07, 6, 6), M(0x2b1d14), sx, 1.12, 1.42);
+      add(g, cyl(0.04, 0.04, 0.9, 5), M(0xffffff), 0, 0.6, -0.4);
+      add(g, box(1.2, 0.08, 1.0), M(isA ? 0xff8fa3 : 0x7c6ba8), 0, 1.05, -0.4);
+      if (!isA) glow(g, 0, 1.25, -0.4, 2.0, 0xffc86b, 0.8);
+      R.ducks.push({ g, ph: rr(0, 6.28), y: 0.1 });
+    };
+    duck([272, 412], 1.2); duck([320, 404], -1.8); duck([248, 392], 0.6); duck([560, 340], 2.2); duck([620, 338], -0.6);
+    for (let i = 0; i <= 6; i++) { const a = W([232 + i * 16.7, 400 + i * 3]); add(S, sph(0.25, 8, 6), M(i % 2 ? 0xffffff : 0xff8fa3), a[0], 0.15, a[1]); }
+
+    /* 세빛섬 */
+    [[[560, 406], 0], [[582, 398], 1], [[578, 420], 2]].forEach((d) => {
+      const p = W(d[0]); const g = grp(p[0], 0, p[1]);
+      add(g, cyl(1.9, 2.0, 0.35, 20), M(P.wall), 0, 0.12, 0);
+      const dome = add(g, G('dome', () => new THREE.SphereGeometry(1.5, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2)), isA ? M(P.domes[d[1]]) : MBc(P.domes[d[1]]), 0, 0.3, 0);
+      dome.scale.set(1, 1.15, 1);
+      if (!isA) glow(g, 0, 1.3, 0, 5.5, P.domes[d[1]], 0.75);
+    });
+    const sw = W([577, 432]);
+    add(S, box(1.0, 0.2, 3.6), M(P.wood), sw[0], 0.25, sw[1] + 0.6);
+    R.walk = { x0: sw[0] - 0.6, x1: sw[0] + 0.6, z0: sw[1] - 1.4, z1: sw[1] + 2.6 };
+    if (!isA) { const pl = new THREE.PointLight(0xffa0c0, 1.2, 14, 2); pl.position.set(36, 3, 7.5); S.add(pl); }
+
+    /* 편의점 */
+    const cv = W([402, 467]);
+    const cvs = grp(cv[0], 0, cv[1]);
+    add(cvs, box(3.2, 2.0, 2.2), M(P.wall), 0, 1.0, 0);
+    add(cvs, box(3.4, 0.4, 0.8), M(isA ? 0x7bc8f6 : 0x7c6ba8), 0, 2.05, -1.2);
+    add(cvs, box(2.4, 1.1, 0.06), isA ? M(0xe8f6fb) : MBc(0xffe7a8), 0, 1.0, -1.11);
+    for (const t of [[2.4, -1.8], [3.6, -0.4]]) { add(cvs, cyl(0.5, 0.5, 0.08, 14), M(0xffffff), t[0], 0.8, t[1]); add(cvs, cyl(0.06, 0.06, 0.8, 6), M(P.woodDk), t[0], 0.4, t[1]); }
+    if (!isA) glow(cvs, 0, 1.2, -1.6, 4, 0xffe7a8, 0.6);
+    R.cols.push({ x: cv[0], z: cv[1], r: 2.0 });
+
+    /* 여의도: 금빛 빌딩 + 벚꽃길 */
+    const yb = W([105, 470]);
+    const gb = add(S, cyl(0.9, 1.5, 12, 4), M(P.gold), yb[0], 6, yb[1]); gb.rotation.y = Math.PI / 4;
+    if (!isA) for (let h = 2; h < 12; h += 2) glow(S, yb[0], h, yb[1] - 1.3, 1.8, 0xffd27a, 0.6);
+    R.cols.push({ x: yb[0], z: yb[1], r: 1.8 });
+    [[148, 440], [174, 446], [200, 452], [228, 458], [256, 462]].forEach((pt) => { const p = W(pt); roundTree(p[0], p[1], isA ? P.treeA : P.treeB, 1.0); });
+    if (!isA) [[162, 458], [214, 470]].forEach((pt) => { const p = W(pt); add(S, cyl(0.06, 0.06, 2, 6), M(P.woodDk), p[0], 1, p[1]); lamp(S, p[0], 2.1, p[1], 2.4); });
+
+    /* 롯데타워 */
+    const lt = W([594, 494]);
+    const ltw = grp(lt[0], 0, lt[1]);
+    add(ltw, cyl(0.3, 1.8, 24, 10), M(P.glass), 0, 12, 0);
+    add(ltw, cyl(0.32, 0.32, 1.6, 8, 1, true), M(isA ? 0xe6f4fb : 0xfbf3e4, { side: THREE.DoubleSide }), 0, 24.6, 0);
+    if (!isA) { for (let h = 3; h < 24; h += 3) glow(ltw, 0, h, 1.2 - h * 0.05, 1.4, 0xffe7a8, 0.6); glow(ltw, 0, 25, 0, 4, 0xffc86b, 0.9); }
+    blob(ltw, 2.2);
+    R.cols.push({ x: lt[0], z: lt[1], r: 2.0 });
+
+    /* 잠실 경기장 */
+    const st = W([548, 505]);
+    const sd = grp(st[0], 0, st[1]);
+    add(sd, ellipseG, M(P.pitch, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), 0, 0.08, 0).scale.set(3.4, 1, 1.8);
+    const wall = add(sd, cyl(1, 1, 1.6, 48, 1, true), M(P.wall, { side: THREE.DoubleSide }), 0, 0.8, 0); wall.scale.set(5.1, 1, 3.0);
+    const rim = add(sd, cyl(1, 1, 0.35, 48, 1, true), M(P.ring, { side: THREE.DoubleSide }), 0, 1.7, 0); rim.scale.set(5.3, 1, 3.2);
+    for (const c of [[-4.6, -2.6], [4.6, -2.6], [-4.6, 2.6], [4.6, 2.6]]) { add(sd, cyl(0.08, 0.08, 3.4, 6), M(P.ring), c[0], 1.7, c[1]); add(sd, box(0.7, 0.4, 0.2), isA ? M(0xffffff) : MBc(0xfff1c8), c[0], 3.4, c[1]); if (!isA) glow(sd, c[0], 3.4, c[1], 3.4, 0xfff1c8, 0.85); }
+    if (!isA) { const pl = new THREE.PointLight(0xfff1c8, 1.0, 12, 2); pl.position.set(st[0], 4, st[1]); S.add(pl); }
+    R.cols.push({ x: st[0], z: st[1], r: 4.6 });
+
+    /* 잠실 카트 서킷 */
+    const ck = W([430, 600]);
+    R.circuit = { x: ck[0], z: ck[1] };
+    const trk = new THREE.RingGeometry(0.72, 1, 72, 1); trk.rotateX(-Math.PI / 2);
+    add(S, trk, M(P.track, { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), ck[0], 0.05, ck[1]).scale.set(6.6, 1, 3.8);
+    [0xe94b6b, 0x7bc8f6, 0xffd166].forEach((c, i) => {
+      const g = new THREE.Group(); S.add(g);
+      add(g, box(0.8, 0.35, 1.3), M(c), 0, 0.35, 0);
+      add(g, sph(0.25, 10, 8), M(0xfff1d6), 0, 0.75, -0.1);
+      for (const sx of [-0.45, 0.45]) for (const sz of [-0.45, 0.45]) add(g, cyl(0.16, 0.16, 0.12, 8), M(0x3b3b3b), sx, 0.18, sz).rotation.z = Math.PI / 2;
+      R.karts.push({ g, a: i * 2.1, sp: 0.9 + i * 0.12 });
+    });
+
+    /* 길 (징검돌) */
+    const stone = (x, z) => { const s = add(S, cyl(0.55, 0.6, 0.1, 12), M(P.path), x, 0.05, z); s.scale.set(rr(0.85, 1.1), 1, rr(0.8, 1)); s.rotation.y = rr(0, 3); };
+    const pathLine = (a, b) => { const A = W(a), B = W(b), L = Math.hypot(B[0] - A[0], B[1] - A[1]); const n = Math.max(1, Math.round(L / 1.5)); for (let i = 0; i <= n; i++) stone(A[0] + (B[0] - A[0]) * i / n, A[1] + (B[1] - A[1]) * i / n); };
+    pathLine([350, 290], [334, 192]); pathLine([352, 464], [356, 620]); pathLine([360, 470], [398, 468]); pathLine([340, 470], [306, 458]);
+    pathLine([476, 456], [435, 578]); pathLine([486, 446], [586, 458]); pathLine([212, 448], [120, 500]); pathLine([212, 286], [232, 280]); pathLine([476, 292], [452, 282]);
+
+    /* 나무 · 꽃 */
+    [[206, 238], [386, 252], [490, 190], [500, 150], [586, 182], [586, 232], [600, 276], [560, 290], [290, 600], [310, 630], [500, 600], [205, 605], [140, 560], [320, 520], [540, 580], [292, 372], [414, 386]].forEach((pt, i) => {
+      const p = W(pt); roundTree(p[0], p[1], i % 2 ? P.treeA : P.treeB, i > 14 ? 0.8 : 1.0, i > 14 ? 0.14 : 0);
+    });
+    const blocked = (x, z) => {
+      if (Math.hypot(x, z) > RAt(x, z) * 0.9) return true;
+      if (Math.abs(z - rzAt(x)) < 11.5) return true;
+      if (Math.abs(Math.hypot(x - RC[0], z - RC[1]) - RR) < 3.4) return true;
+      if (z < -38) return true;
+      for (const c of R.cols) if (Math.hypot(x - c.x, z - c.z) < c.r + 2.4) return true;
+      for (const s of R.stations) if (Math.hypot(x - s.px, z - s.pz) < 3) return true;
+      if (Math.abs(x - pc[0]) < 11 && Math.abs(z - pc[1]) < 6) return true;
+      if (Math.hypot(x - ck[0], z - ck[1]) < 8) return true;
+      return false;
+    };
+    let n = 0;
+    for (let i = 0; i < 1500 && n < 46; i++) {
+      const x = rr(-44, 44), z = rr(-40, 46);
+      if (blocked(x, z)) continue;
+      roundTree(x, z, rnd() < 0.5 ? P.treeA : P.treeB, rr(0.85, 1.15)); n++;
+    }
+    const fpos = [];
+    for (let i = 0; i < 2500 && fpos.length < 520; i++) {
+      const x = rr(-44, 44), z = rr(-40, 46);
+      if (Math.hypot(x, z) > RAt(x, z) * 0.93 || Math.abs(z - rzAt(x)) < 10.5) continue;
+      if (Math.abs(Math.hypot(x - RC[0], z - RC[1]) - RR) < 1.8) continue;
+      if (R.cols.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + 0.4)) continue;
+      for (let j = 0; j < 3; j++) fpos.push([x + rr(-0.35, 0.35), z + rr(-0.35, 0.35)]);
+    }
+    const fm = new THREE.InstancedMesh(sph(0.14, 8, 6), M(0xffffff, {}), fpos.length);
+    const lm = new THREE.InstancedMesh(G('leaf', () => { const g = new THREE.SphereGeometry(0.17, 8, 5); g.scale(1, 0.35, 1); return g; }), M(0x5aad78, {}), fpos.length);
+    const mtx = new THREE.Matrix4(), col = new THREE.Color();
+    fpos.forEach((p, i) => { mtx.makeTranslation(p[0], 0.2, p[1]); fm.setMatrixAt(i, mtx); mtx.makeTranslation(p[0], 0.07, p[1]); lm.setMatrixAt(i, mtx); col.setHex(P.flower[Math.floor(rnd() * P.flower.length)]); fm.setColorAt(i, col); });
+    if (fm.instanceColor) fm.instanceColor.needsUpdate = true;
+    S.add(lm); S.add(fm);
+
+    /* 캐릭터 */
+    const blushM = MB({ color: 0xff8fa3, transparent: true, opacity: 0.55 });
+    const critter = (o) => {
+      const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+      const fur = M(o.fur || o.skin), shirt = M(o.shirt), pants = M(o.pants || o.fur), acc = M(o.accent || 0xffffff);
+      const legs = [], arms = [];
+      for (const sx of [-1, 1]) {
+        const leg = new THREE.Group(); leg.position.set(sx * 0.12, 0.32, 0); body.add(leg);
+        add(leg, cyl(0.085, 0.075, 0.3, 10), pants, 0, -0.15, 0);
+        add(leg, sph(0.1, 10, 8), M(0x7a5a43), 0, -0.29, 0.03).scale.set(1, 0.6, 1.35);
+        legs.push(leg);
+      }
+      add(body, cyl(0.2, 0.27, 0.46, 14), shirt, 0, 0.6, 0);
+      for (const sx of [-1, 1]) {
+        const arm = new THREE.Group(); arm.position.set(sx * 0.24, 0.8, 0); arm.rotation.z = sx * 0.35; body.add(arm);
+        add(arm, cyl(0.06, 0.065, 0.3, 8), shirt, 0, -0.14, 0);
+        add(arm, sph(0.075, 8, 6), fur, 0, -0.3, 0);
+        arms.push(arm);
+      }
+      const head = new THREE.Group(); head.position.y = 1.2; body.add(head);
+      add(head, sph(0.46, 20, 16), fur, 0, 0, 0).scale.set(1, 0.95, 0.95);
+      for (const sx of [-1, 1]) {
+        add(head, sph(0.065, 10, 8), M(0x2b1d14), sx * 0.15, 0.03, 0.4).scale.set(1, 1.35, 0.6);
+        add(head, sph(0.022, 6, 6), MBc(0xffffff), sx * 0.15 + 0.02, 0.07, 0.435);
+        add(head, sph(0.07, 10, 8), blushM, sx * 0.26, -0.1, 0.33).scale.set(1, 0.55, 0.4);
+      }
+      add(head, sph(0.035, 8, 6), M(0x8a3b2b), 0, -0.15, 0.405).scale.set(1.4, 0.6, 0.5);
+      const ears = [];
+      const t = o.type;
+      if (t === 'human') {
+        add(head, G('hair', () => new THREE.SphereGeometry(0.49, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55)), M(o.hair), 0, 0.02, -0.02);
+        add(head, sph(0.47, 18, 14), M(o.hair), 0, -0.04, -0.08).scale.set(1, 0.92, 0.85);
+        const h = new THREE.Group(); h.position.y = 0.02; h.rotation.x = -0.12; head.add(h);
+        add(h, cyl(0.78, 0.78, 0.04, 28), M(0xf2d38a), 0, 0.26, 0);
+        add(h, cyl(0.36, 0.41, 0.3, 20), M(0xf2d38a), 0, 0.42, 0);
+        add(h, cyl(0.415, 0.415, 0.08, 20), M(o.ribbon), 0, 0.32, 0);
+      } else if (t === 'bunny') {
+        add(head, sph(0.05, 8, 6), M(0xff9eb5), 0, -0.06, 0.44);
+        for (const sx of [-1, 1]) { const ear = new THREE.Group(); ear.position.set(sx * 0.16, 0.36, -0.02); ear.rotation.z = -sx * 0.14; head.add(ear); add(ear, sph(0.11, 10, 8), fur, 0, 0.28, 0).scale.set(1, 3, 0.6); add(ear, sph(0.07, 8, 6), acc, 0, 0.28, 0.045).scale.set(1, 2.6, 0.4); ears.push(ear); }
+      } else if (t === 'squirrel') {
+        add(head, sph(0.17, 10, 8), acc, 0, -0.1, 0.33).scale.set(1, 0.7, 0.6);
+        add(head, sph(0.05, 8, 6), M(0x3b2a20), 0, -0.05, 0.45);
+        for (const sx of [-1, 1]) add(head, cone(0.1, 0.22, 8), fur, sx * 0.25, 0.42, 0).rotation.z = -sx * 0.3;
+        const tail = new THREE.Group(); tail.position.set(0, 0.45, -0.3); body.add(tail);
+        [[0, 0.1, -0.1, 0.22], [0, 0.45, -0.28, 0.27], [0, 0.82, -0.18, 0.25], [0, 1.02, 0.04, 0.18]].forEach((q) => add(tail, sph(q[3], 12, 10), fur, q[0], q[1], q[2]));
+        ears.push(tail);
+      } else if (t === 'sheep') {
+        [[0, 0.36, 0], [0.22, 0.3, 0.05], [-0.22, 0.3, 0.05], [0.12, 0.4, -0.18], [-0.12, 0.4, -0.18], [0.34, 0.12, -0.08], [-0.34, 0.12, -0.08], [0, 0.25, -0.3]].forEach((w) => add(head, sph(0.17, 10, 8), M(0xffffff), w[0], w[1], w[2]));
+        for (const sx of [-1, 1]) { const e = add(head, sph(0.1, 8, 6), M(0x6b5a4e), sx * 0.44, 0.04, 0); e.scale.set(1.3, 0.5, 0.6); e.rotation.z = sx * 0.3; }
+      } else if (t === 'bear') {
+        add(head, sph(0.17, 10, 8), acc, 0, -0.1, 0.33).scale.set(1, 0.7, 0.6);
+        add(head, sph(0.055, 8, 6), M(0x3b2a20), 0, -0.05, 0.46);
+        for (const sx of [-1, 1]) add(head, sph(0.14, 10, 8), fur, sx * 0.3, 0.36, 0);
+      } else if (t === 'cat') {
+        add(head, sph(0.04, 8, 6), M(0xff9eb5), 0, -0.06, 0.45);
+        for (const sx of [-1, 1]) add(head, cone(0.13, 0.26, 4), fur, sx * 0.24, 0.42, 0).rotation.z = -sx * 0.25;
+      } else if (t === 'dog') {
+        add(head, sph(0.17, 10, 8), acc, 0, -0.1, 0.33).scale.set(1, 0.7, 0.6);
+        add(head, sph(0.06, 8, 6), M(0x3b2a20), 0, -0.04, 0.47);
+        for (const sx of [-1, 1]) { const e = add(head, sph(0.13, 10, 8), acc, sx * 0.42, 0.1, 0); e.scale.set(0.6, 1.5, 0.8); e.rotation.z = sx * 0.4; }
+      } else if (t === 'deer') {
+        add(head, sph(0.15, 10, 8), acc, 0, -0.1, 0.34).scale.set(1, 0.7, 0.6);
+        add(head, sph(0.045, 8, 6), M(0x3b2a20), 0, -0.05, 0.46);
+        for (const sx of [-1, 1]) {
+          add(head, sph(0.1, 8, 6), fur, sx * 0.4, 0.18, 0).scale.set(1.5, 0.6, 0.6);
+          add(head, cyl(0.025, 0.035, 0.36, 6), M(0xe8d3a8), sx * 0.15, 0.52, -0.02).rotation.z = -sx * 0.3;
+          add(head, cyl(0.02, 0.025, 0.18, 6), M(0xe8d3a8), sx * 0.26, 0.62, -0.02).rotation.z = -sx * 1.0;
+        }
+      }
+      blob(g, 0.45);
+      S.add(g);
+      return { g, body, head, legs, arms, ears };
+    };
+
+    const mk = new THREE.Mesh(G('mk', () => { const g = new THREE.RingGeometry(0.35, 0.6, 24); g.rotateX(-Math.PI / 2); return g; }), MB({ color: isA ? 0xff8fa3 : 0xffd27a, transparent: true, opacity: 0.9, depthWrite: false }));
+    mk.visible = false; mk.renderOrder = 2; S.add(mk); R.marker = mk;
+    if (game.goal) { mk.visible = true; mk.position.set(game.goal.x, 0.25, game.goal.z); }
+
+    R.player = critter({ type: 'human', skin: 0xffdcbf, hair: 0x6b4226, shirt: isA ? 0x7bc8f6 : 0xffc93c, pants: 0x4a6fa5, ribbon: isA ? 0xff8fa3 : 0x7c6ba8 });
+    const npcDefs = [
+      { name: '도토리', tag: '#E08E1F', o: { type: 'squirrel', fur: 0xc98a4b, accent: 0xf6e2c4, shirt: 0x4caf7a }, at: [5.0, 2.6], y: 0.14, lines: ['어서 와요! 여긴 서울섬 노들섬 광장이에요~', '다리 세 개로 강북이랑 강남을 오갈 수 있고, 초록 열차도 탈 수 있어요!'] },
+      { name: '곰돌', tag: '#A86F1F', o: { type: 'bear', fur: 0x9b6b43, accent: 0xe6c8a0, shirt: 0xffd166 }, at: [-5.8, 15.4], y: 0, lines: ['어흠! 헤엄은 못 쳐도 오리배는 탄다곰!', '다리 세 개 밑을 지나서 노들섬까지 경주하는 거다곰!'] },
+      { name: '첨벙', tag: '#2F7FB8', o: { type: 'bear', fur: 0x8a5a3c, accent: 0xe2c49a, shirt: 0xffc93c, pants: 0x3e5c8a }, at: [W([577, 432])[0] + 1.6, W([577, 432])[1] + 2.4], y: 0, lines: ['세빛섬은 낚시 명당이야첨벙~', '노을이 지면 섬이 무지개빛으로 빛나서 더 예뻐!'] },
+      { name: '탕탕', tag: '#3A6FC0', o: { type: 'cat', fur: 0xa7b0c2, accent: 0xffffff, shirt: 0x3a7bd5 }, at: [W([260, 280])[0], W([260, 280])[1] + 2.4], y: 0, lines: ['야시장 풍선사격 한 판 어때냥?', '해가 지면 벨이 두 배다냥!'] },
+      { name: '피융', tag: '#4E8A35', o: { type: 'deer', fur: 0xc4834f, accent: 0xf6e6cf, shirt: 0x6ab04c }, at: [W([241, 187])[0] + 2.4, W([241, 187])[1] + 1.6], y: 0, lines: ['쉿… 궁궐 활터에선 바람을 읽어야 해사슴.', '오늘은 북한산 바람이 순하네.'] },
+      { name: '모카', tag: '#D9708B', o: { type: 'bunny', fur: 0xffffff, accent: 0xffd6e0, shirt: 0xff9eb5 }, at: [W([200, 452])[0] - 1.4, W([200, 452])[1] + 2.6], y: 0, lines: ['여의도 벚꽃길은 꽃잎이 비처럼 내려깡총!', '꽃잎을 모아 가면 도토리가 벨로 바꿔 준대~'] },
+      { name: '부릉', tag: '#C9403F', o: { type: 'dog', fur: 0xf0d2a8, accent: 0x9a6a43, shirt: 0xe94b4b }, at: [ck[0] - 8.2, ck[1] - 1.0], y: 0, lines: ['잠실 카트 서킷에 온 걸 환영한다멍!', '롯데타워 보면서 달리면 기분 최고다멍!'] },
+      { name: '솜이', tag: '#3C8DC0', o: { type: 'sheep', fur: 0xf3dfc8, accent: 0xffffff, shirt: 0x8fd3ff }, at: [W([160, 214])[0] + 1.0, W([160, 214])[1] + 1.4], y: 0, lines: ['음냐… 마이홈 마을은 조용해서 좋아음매~', '한옥이랑 단독주택 중에 뭐가 좋아음매?'] }
+    ];
+    npcDefs.forEach((d) => {
+      const c = critter(d.o);
+      c.g.position.set(d.at[0], d.y, d.at[1]);
+      R.npcs.push(Object.assign(c, { name: d.name, tag: d.tag, lines: d.lines, x: d.at[0], z: d.at[1], ph: rr(0, 6.28) }));
+      R.cols.push({ x: d.at[0], z: d.at[1], r: 0.6 });
+    });
+
+    /* 분위기 */
+    if (isA) {
+      const cnt = 80;
+      const pm = new THREE.InstancedMesh(G('petal', () => new THREE.PlaneGeometry(0.15, 0.1)), MB({ color: 0xffb7c8, side: THREE.DoubleSide }), cnt);
+      pm.frustumCulled = false;
+      const arr = [];
+      for (let i = 0; i < cnt; i++) arr.push({ x: rr(-14, 14), y: rr(0, 7), z: rr(-16, 12), vx: rr(0.2, 0.55), vy: rr(0.35, 0.65), ph: rr(0, 6.28) });
+      S.add(pm);
+      R.petals = { m: pm, p: arr, o: new THREE.Object3D() };
+    } else {
+      for (let i = 0; i < 50; i++) {
+        const x = rr(-36, 36), z = rr(-34, 40);
+        if (Math.abs(z - rzAt(x)) < 8) continue;
+        const sp = glow(S, x, rr(0.5, 2.6), z, 0.9, 0xffe29a, 0.95);
+        R.flies.push({ s: sp, x, y: sp.position.y, z, ph: rr(0, 6.28), sp: rr(0.4, 1) });
+      }
+    }
+
+    R.zones = [
+      ['노들섬 광장', NC[0], NC[1], 12], ['오리배 선착장', -7.8, 12.6, 5], ['세빛섬 낚시터', 36, 8, 7], ['반포 무지개다리', 20.2, 2, 5],
+      ['야시장 풍선사격', -14, -12, 7], ['궁궐 활터', pc[0] - 6, pc[1], 13], ['남산타워', nm[0], nm[1], 7], ['마이홈 마을', -33, -26, 10],
+      ['여의도 벚꽃길', -30, 15, 10], ['잠실 카트 서킷', ck[0], ck[1], 9], ['잠실 경기장', st[0], st[1], 7], ['롯데타워', lt[0], lt[1], 4],
+      ['한강 편의점', cv[0], cv[1], 4], ['마포대교', -22.1, 1, 6], ['한강대교', 0, -6, 4]
+    ];
+  }
+
+  /* ---------- 이동 판정 ---------- */
+  const onBridge = (x, z) => { for (const b of game.R.bridges) if (Math.abs(x - b.x) < 1.55) for (const s of b.segs) if (z > s[0] - 0.3 && z < s[1] + 0.3) return true; return false; };
+  const onNoddle = (x, z) => { const n = game.R.noddle; return ((x - n.x) / n.rx) ** 2 + ((z - n.z) / n.rz) ** 2 < 1; };
+  const onPier = (x, z) => { const p = game.R.pier, w = game.R.walk; return (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) || (x > w.x0 && x < w.x1 && z > w.z0 && z < w.z1); };
+  const walkable = (x, z) => {
+    const R = game.R;
+    if (Math.hypot(x, z) > R.RAt(x, z) * 1.035) return false;
+    if (Math.abs(z - R.rzAt(x)) < 8.0 && !onBridge(x, z) && !onNoddle(x, z) && !onPier(x, z)) return false;
+    for (const c of R.cones) if (Math.hypot(x - c.x, z - c.z) < c.r * 0.9) return false;
+    for (const o of R.cols) if (Math.hypot(x - o.x, z - o.z) < o.r) return false;
+    return true;
+  };
+
+  /* ---------- 매 프레임 ---------- */
+  function tick(dt) {
+    game.T += dt;
+    const T = game.T, R = game.R, c = game.cam, pl = game.pl, now = performance.now();
+    const held = (key) => game.keys[key] || (game.tap[key] && now - game.tap[key] < 140);
+    const k = { w: held('w'), a: held('a'), s: held('s'), d: held('d'), arrowup: held('arrowup'), arrowdown: held('arrowdown'), arrowleft: held('arrowleft'), arrowright: held('arrowright'), shift: game.keys.shift };
+
+    let mx = 0, mz = 0;
+    if (k.w || k.arrowup) mz -= 1;
+    if (k.s || k.arrowdown) mz += 1;
+    if (k.a || k.arrowleft) mx -= 1;
+    if (k.d || k.arrowright) mx += 1;
+    let moving = false, dx = 0, dz = 0;
+    const talking = !!game.talk || !!game.ride;
+    if (game.ride) moving = updateRide(dt);
+    else if ((mx || mz) && !talking) {
+      game.goal = null;
+      const l = Math.hypot(mx, mz); mx /= l; mz /= l;
+      const fx = -Math.sin(c.yaw), fz = -Math.cos(c.yaw), rx = Math.cos(c.yaw), rzz = -Math.sin(c.yaw);
+      dx = rx * mx - fx * mz; dz = rzz * mx - fz * mz;
+      moving = true;
+    } else if (game.goal && !talking) {
+      const gx = game.goal.x - pl.x, gz = game.goal.z - pl.z, gl = Math.hypot(gx, gz);
+      if (gl < 0.35) game.goal = null;
+      else { dx = gx / gl; dz = gz / gl; moving = true; }
+    }
+    if (game.ride) {
+      if (moving) pl.walk += dt * 11;
+    } else if (moving) {
+      const sp = (k.shift ? 9 : 5) * dt, ox = pl.x, oz = pl.z;
+      if (walkable(pl.x + dx * sp, pl.z)) pl.x += dx * sp;
+      if (walkable(pl.x, pl.z + dz * sp)) pl.z += dz * sp;
+      if (game.goal) {
+        if (Math.hypot(pl.x - ox, pl.z - oz) < sp * 0.25) { game.goal.t += dt; if (game.goal.t > 0.5) game.goal = null; }
+        else game.goal.t = 0;
+      }
+      let d = Math.atan2(dx, dz) - pl.rot; d = Math.atan2(Math.sin(d), Math.cos(d));
+      pl.rot += d * (1 - Math.exp(-14 * dt));
+      pl.walk += dt * (k.shift ? 16 : 11);
+    }
+    if (R.marker) {
+      if (!game.goal) R.marker.visible = false;
+      else { const s = 1 + Math.sin(T * 8) * 0.15; R.marker.scale.set(s, 1, s); }
+    }
+    const ty = game.ride && game.ride.phase === 'ride' ? 0.6 :game.ride ? 0.12 : onBridge(pl.x, pl.z) ? 0.47 : onPier(pl.x, pl.z) ? 0.4 : onNoddle(pl.x, pl.z) ? 0.16 : 0;
+    pl.y += (ty - pl.y) * (1 - Math.exp(-12 * dt));
+
+    const P0 = R.player;
+    P0.g.position.set(pl.x, pl.y, pl.z); P0.g.rotation.y = pl.rot;
+    const sw = moving ? Math.sin(pl.walk) * 0.7 : 0;
+    P0.legs[0].rotation.x = sw; P0.legs[1].rotation.x = -sw;
+    P0.arms[0].rotation.x = -sw * 0.8; P0.arms[1].rotation.x = sw * 0.8;
+    P0.body.position.y = moving ? Math.abs(Math.sin(pl.walk)) * 0.08 : Math.sin(T * 2) * 0.012;
+
+    let best = null, bd = 1e9;
+    R.npcs.forEach((n) => {
+      const d = Math.hypot(pl.x - n.x, pl.z - n.z);
+      n.body.position.y = Math.abs(Math.sin(T * 2 + n.ph)) * 0.04;
+      n.head.rotation.z = Math.sin(T * 1.4 + n.ph) * 0.07;
+      n.ears.forEach((e) => { e.rotation.x = Math.sin(T * 2.6 + n.ph) * 0.12; });
+      if (d < 6) { let a = Math.atan2(pl.x - n.x, pl.z - n.z) - n.g.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); n.g.rotation.y += a * (1 - Math.exp(-5 * dt)); }
+      if (d < 2.8 && d < bd) { bd = d; best = { kind: 'npc', o: n }; }
+    });
+    if (!best) R.stations.forEach((s) => { const d = Math.hypot(pl.x - s.px, pl.z - s.pz); if (d < 3.4 && d < bd) { bd = d; best = { kind: 'station', o: s }; } });
+    if (game.ride) best = null;
+    game.target = best;
+    let prompt = '';
+    if (best && best.kind === 'npc') prompt = best.o.name + '에게 말걸기';
+    else if (best) { const i = R.stations.indexOf(best.o); prompt = '열차 타기 · 다음 역 ' + R.stations[(i + 1) % R.stations.length].name + '역'; }
+    setPrompt(prompt);
+    if (game.talk && !best) closeTalk();
+
+    if (!game.ride) { R.trainA += dt * 0.075; game.trainA = R.trainA; }
+    const RC = R.rc;
+    R.cars.forEach((g, i) => { const a = R.trainA - i * OFF; g.position.set(RC[0] + Math.cos(a) * RR, 0.14, RC[1] + Math.sin(a) * RR); g.rotation.y = -a; });
+    R.karts.forEach((kt) => { kt.a += dt * kt.sp; const x = R.circuit.x + Math.cos(kt.a) * 5.8, z = R.circuit.z + Math.sin(kt.a) * 3.3; kt.g.position.set(x, 0.05, z); kt.g.rotation.y = Math.atan2(-Math.sin(kt.a) * 5.8, Math.cos(kt.a) * 3.3); });
+    R.ducks.forEach((d) => { d.g.position.y = d.y + Math.sin(T * 1.6 + d.ph) * 0.06; d.g.rotation.z = Math.sin(T * 1.2 + d.ph) * 0.04; });
+    R.sway.forEach((s) => { s.f.rotation.z = Math.sin(T * 1.3 + s.ph) * 0.025; s.f.rotation.x = Math.sin(T * 1.1 + s.ph * 1.7) * 0.02; });
+    R.waterTex.offset.x -= dt * 0.18;
+    if (R.petals) {
+      const pp = R.petals, o = pp.o;
+      pp.p.forEach((p, i) => {
+        p.y -= p.vy * dt; p.x += p.vx * dt + Math.sin(T * 1.7 + p.ph) * 0.012; p.z += Math.cos(T * 1.3 + p.ph) * 0.01;
+        if (p.y < 0.05) { p.y = 6 + Math.random() * 2; p.x = pl.x + (Math.random() - 0.5) * 28; p.z = pl.z - 2 + (Math.random() - 0.65) * 26; }
+        o.position.set(p.x, p.y, p.z); o.rotation.set(T * 2 + p.ph, T * 1.3 + p.ph, p.ph); o.updateMatrix();
+        pp.m.setMatrixAt(i, o.matrix);
+      });
+      pp.m.instanceMatrix.needsUpdate = true;
+    }
+    R.flies.forEach((f) => {
+      f.s.position.set(f.x + Math.sin(T * 0.5 * f.sp + f.ph) * 0.9, f.y + Math.sin(T * 0.8 * f.sp + f.ph * 2) * 0.35, f.z + Math.cos(T * 0.45 * f.sp + f.ph) * 0.9);
+      const s = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(T * 3 * f.sp + f.ph));
+      f.s.scale.set(s, s, 1);
+    });
+
+    const e = 1 - Math.exp(-6 * dt);
+    c.tx += (pl.x - c.tx) * e; c.ty += (pl.y + 1 - c.ty) * e; c.tz += (pl.z - c.tz) * e;
+    const cp = Math.cos(c.pitch), spp = Math.sin(c.pitch);
+    camera.position.set(c.tx + Math.sin(c.yaw) * cp * c.dist, c.ty + spp * c.dist, c.tz + Math.cos(c.yaw) * cp * c.dist);
+    camera.lookAt(c.tx, c.ty + 0.4, c.tz);
+
+    game.mmT += dt;
+    if (game.mmT > 0.15) {
+      game.mmT = 0;
+      let zone = null, zd = 1e9;
+      R.zones.forEach((zn) => { const d = Math.hypot(pl.x - zn[1], pl.z - zn[2]); if (d < zn[3] && d / zn[3] < zd) { zd = d / zn[3]; zone = zn[0]; } });
+      const rz = R.rzAt(pl.x);
+      const area = pl.z < rz - 8 ? '강북' : pl.z > rz + 8 ? '강남' : '한강';
+      if (!zone) zone = area === '한강' ? '한강 위' : area + ' 산책길';
+      if (zone !== game.zone) { game.zone = zone; $('zone').textContent = zone; }
+      if (area !== game.area) { game.area = area; $('area').textContent = area; }
+      const mxp = Math.round(350 + pl.x / 0.16), myp = Math.round(360 + pl.z / 0.16), mr = Math.round(Math.atan2(Math.sin(pl.rot), -Math.cos(pl.rot)) * 180 / Math.PI);
+      $('me').setAttribute('transform', 'translate(' + mxp + ' ' + myp + ') rotate(' + mr + ')');
+    }
+    renderer.render(game.S, camera);
+  }
+
+  /* ---------- 시작 ---------- */
+  const start = () => {
+    buildScene('A');
+    $('loading').style.display = 'none';
+    canvas.focus({ preventScroll: true });
+    const clock = new THREE.Clock();
+    const loop = () => { requestAnimationFrame(loop); tick(Math.min(0.05, clock.getDelta())); };
+    loop();
+  };
+  if (document.fonts && document.fonts.ready) Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]).then(start);
+  else start();
+})();
+</script>
+</body>
+</html>
