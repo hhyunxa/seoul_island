@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { signTexture, rng } from '../textures.js';
@@ -38,7 +39,7 @@ export class SoccerGame extends MiniGame {
       const g = new THREE.Group(); g.position.x = sx * FX;
       box(0.14, 1.3, 0.14, W, 0, 0.65, -MOUTH, g); box(0.14, 1.3, 0.14, W, 0, 0.65, MOUTH, g);
       box(0.14, 0.14, 2 * MOUTH + 0.14, W, 0, 1.3, 0, g);
-      const net = new THREE.MeshLambertMaterial({ color: '#e8eef2', transparent: true, opacity: 0.45 });
+      const net = toonMat({ color: '#e8eef2', transparent: true, opacity: 0.45 });
       box(0.05, 1.3, 2 * MOUTH, net, sx * NET, 0.65, 0, g);
       box(NET, 0.05, 2 * MOUTH, net, sx * NET / 2, 1.3, 0, g);
       box(NET, 1.3, 0.05, net, sx * NET / 2, 0.65, -MOUTH, g); box(NET, 1.3, 0.05, net, sx * NET / 2, 0.65, MOUTH, g);
@@ -51,14 +52,14 @@ export class SoccerGame extends MiniGame {
       box(2 * FX + 6, 0.5 + row * 0.55, 1.0, '#c9c4b8', 0, y / 2 + 0.05, z, s);
       for (let x = -FX - 2.5; x <= FX + 2.5; x += 0.55) if (r() < 0.8) box(0.32, 0.4, 0.3, crowd[(r() * crowd.length) | 0], x, y + 0.5 + row * 0.27, z, s);
     }
-    const board = new THREE.Mesh(new THREE.BoxGeometry(6, 0.9, 0.1), new THREE.MeshLambertMaterial({ map: signTexture('서울월드컵경기장', { w: 160, h: 24, size: 14, bg: '#ffd23f' }) }));
+    const board = new THREE.Mesh(rbox(6, 0.9, 0.1), toonMat({ map: signTexture('서울월드컵경기장', { w: 160, h: 24, size: 14, bg: '#ffd23f' }) }));
     board.position.set(0, 0.5, -FZ - 1.2); s.add(board);
     this.ads = [];
     for (const sx of [-1, 1]) { const ad = box(0.1, 0.6, 2 * FZ, '#2f5fae', sx * (FX + 2.2), 0.3, 0, s); this.ads.push(ad); }
 
     // 공
     this.ball = new THREE.Group();
-    const bm = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }));
+    const bm = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), toonMat({ color: '#ffffff', flatShading: true }));
     bm.castShadow = true; this.ball.add(bm); this.ballMesh = bm;
     for (const [x, y, z] of [[0.17, 0.05, 0], [-0.12, 0.12, 0.1], [0, -0.15, -0.12], [0.02, 0.1, -0.17]]) box(0.1, 0.1, 0.1, '#222222', x, y, z, bm);
     s.add(this.ball);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box, makeChicken, makeTree } from '../world.js';
 import { roofTexture, plankTexture, rng, signTexture } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -34,11 +35,11 @@ export class ChickenGame extends MiniGame {
     const straw = box(5.1, 0.04, 3.5, '#e8cf7a', 0, 0.02, (PEN.z0 + PEN.z1) / 2, s); straw.castShadow = false;
     // 닭장 집
     const coop = new THREE.Group(); coop.position.set(0, 0, -8.6);
-    const pl = new THREE.MeshLambertMaterial({ map: plankTexture('#d9534a', '#a83a32', '#ea7a6e') }); pl.map.repeat.set(2, 1);
+    const pl = toonMat({ map: plankTexture('#d9534a', '#a83a32', '#ea7a6e') }); pl.map.repeat.set(2, 1);
     box(4, 1.8, 2, pl, 0, 0.9, 0, coop);
-    const roof = box(4.6, 0.3, 2.6, new THREE.MeshLambertMaterial({ map: roofTexture() }), 0, 2.0, 0, coop); roof.rotation.x = 0.12;
+    const roof = box(4.6, 0.3, 2.6, toonMat({ map: roofTexture() }), 0, 2.0, 0, coop); roof.rotation.x = 0.12;
     box(1, 1.1, 0.1, '#5b2f12', 0, 0.55, 1.02, coop);
-    const sign = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.06), new THREE.MeshLambertMaterial({ map: signTexture('닭장', { w: 96, h: 28, size: 14, bg: '#ffd23f' }) }));
+    const sign = new THREE.Mesh(rbox(1.8, 0.5, 0.06), toonMat({ map: signTexture('닭장', { w: 96, h: 28, size: 14, bg: '#ffd23f' }) }));
     sign.position.set(0, 1.5, 1.05); coop.add(sign);
     s.add(coop);
     // 화살표 표시 (입구)

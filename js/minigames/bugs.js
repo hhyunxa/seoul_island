@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { box, mat } from '../world.js';
 import { rng, canvasTexture } from '../textures.js';
 
@@ -6,7 +7,7 @@ function keyTexture(k) {
   const c = document.createElement('canvas'); c.width = c.height = 32;
   const g = c.getContext('2d');
   g.fillStyle = '#3f1d0b'; g.fillRect(0, 0, 32, 32); g.fillStyle = '#fff3d0'; g.fillRect(3, 3, 26, 26);
-  g.fillStyle = '#3f1d0b'; g.font = '700 22px Galmuri11'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(k, 16, 18);
+  g.fillStyle = '#3f1d0b'; g.font = '22px Jua'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(k, 16, 18);
   return canvasTexture(c);
 }
 import { sfx } from '../sfx.js';
@@ -28,7 +29,7 @@ function makeBug(kind) {
     box(0.06, 0.08, 0.04, '#222', -0.07, 0.8, 0.12, g); box(0.06, 0.08, 0.04, '#222', 0.07, 0.8, 0.12, g);
     box(0.04, 0.16, 0.04, '#3f8a2a', -0.08, 0.98, 0, g); box(0.04, 0.16, 0.04, '#3f8a2a', 0.08, 0.98, 0, g);
   } else if (kind === 'beetle') { // 황금 딱정벌레
-    const gold = new THREE.MeshLambertMaterial({ color: '#ffd23f', emissive: '#7a5a00' });
+    const gold = toonMat({ color: '#ffd23f', emissive: '#7a5a00' });
     box(0.5, 0.5, 0.36, gold, 0, 0.4, 0, g); box(0.34, 0.24, 0.3, '#5b3a10', 0, 0.76, 0, g);
     box(0.02, 0.5, 0.02, '#3b2416', 0, 0.4, 0.19, g);
     box(0.06, 0.06, 0.04, '#fff', -0.08, 0.78, 0.16, g); box(0.06, 0.06, 0.04, '#fff', 0.08, 0.78, 0.16, g);

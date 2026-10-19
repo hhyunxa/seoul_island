@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { sfx } from '../sfx.js';
 import { MiniGame } from './base.js';
@@ -21,7 +22,7 @@ function makeFruit(kind) {
     for (const [x, y] of [[-0.13, 0.12], [0.13, 0.12], [0, 0.12], [-0.07, -0.02], [0.07, -0.02], [0, -0.15]]) box(0.15, 0.15, 0.15, '#9b5de5', x, y, 0, g);
     box(0.05, 0.12, 0.05, '#6b3b1c', 0, 0.26, 0, g);
   } else if (kind === 'golden') {
-    const m = new THREE.MeshLambertMaterial({ color: '#ffd23f', emissive: '#8a6a00' });
+    const m = toonMat({ color: '#ffd23f', emissive: '#8a6a00' });
     box(0.46, 0.44, 0.46, m, 0, 0, 0, g); box(0.06, 0.14, 0.06, '#6b3b1c', 0, 0.28, 0, g); box(0.12, 0.12, 0.02, '#fffbe0', -0.1, 0.1, 0.23, g);
   } else {
     box(0.5, 0.42, 0.46, '#7d7d8a', 0, 0, 0, g); box(0.3, 0.2, 0.3, '#a5a5b5', 0.06, 0.26, 0, g); box(0.1, 0.1, 0.02, '#5f5f6e', -0.12, -0.05, 0.24, g);

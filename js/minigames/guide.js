@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { signTexture } from '../textures.js';
@@ -35,14 +36,14 @@ export class GuideGame extends MiniGame {
       const [c, name] = shops[(i * 3 + (side > 0 ? 1 : 0)) % shops.length], z = 3 - i * 3.2;
       box(2.4, 3.2 + (i % 3) * 0.8, 3, c, side * 4.4, 1.6 + (i % 3) * 0.4, z, s);
       box(0.06, 1.2, 2.2, '#bfe6fa', side * 3.18, 0.9, z, s);
-      const sg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 2.0), new THREE.MeshLambertMaterial({ map: signTexture(name, { w: 64, h: 16, size: 11, bg: '#ffffff' }) }));
+      const sg = new THREE.Mesh(rbox(0.08, 0.5, 2.0), toonMat({ map: signTexture(name, { w: 64, h: 16, size: 11, bg: '#ffffff' }) }));
       sg.position.set(side * 3.16, 2.0, z); sg.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2; s.add(sg);
       sg.material.map.center.set(0.5, 0.5);
     }
     // 머리 위 꼬마전구 줄
     for (let i = 0; i < 9; i++) for (let j = 0; j < 7; j++) { const b = box(0.1, 0.1, 0.1, ['#ffe14f', '#ff7ad9', '#7ae8ff'][(i + j) % 3], -3 + j, 3.4 - Math.sin((j / 6) * Math.PI) * 0.3, 2 - i * 3.2, s); b.material = new THREE.MeshBasicMaterial({ color: b.material.color }); b.castShadow = false; }
     // 관광안내 표지
-    const info = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 0.08), new THREE.MeshLambertMaterial({ map: signTexture('i 관광안내', { w: 64, h: 22, size: 12, bg: '#e8413a', fg: '#ffffff' }) }));
+    const info = new THREE.Mesh(rbox(1.6, 0.6, 0.08), toonMat({ map: signTexture('i 관광안내', { w: 64, h: 22, size: 12, bg: '#e8413a', fg: '#ffffff' }) }));
     info.position.set(-1.6, 1.9, 1.6); s.add(info); box(0.08, 1.6, 0.08, '#888', -1.6, 0.8, 1.6, s);
     this.camera.position.set(0, 3.0, 6.6);
     this.camera.lookAt(0, 1.3, -2);
@@ -91,7 +92,7 @@ export class GuideGame extends MiniGame {
     cv.width = img.width * k; cv.height = img.height * k;
     const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, cv.width, cv.height);
     const sx = (x) => (x + img.width / 2) * k, sy = (z) => (z + img.height / 2) * k;
-    g.font = '700 13px Galmuri11'; g.textAlign = 'center';
+    g.font = '13px Jua'; g.textAlign = 'center';
     for (const n of ['북', '동', '남', '서']) { const [x, y] = { 북: [cv.width / 2, 16], 동: [cv.width - 12, cv.height / 2], 남: [cv.width / 2, cv.height - 6], 서: [12, cv.height / 2] }[n]; g.lineWidth = 3; g.strokeStyle = '#fff'; g.strokeText(n, x, y); g.fillStyle = '#3a2410'; g.fillText(n, x, y); }
     const ox = sx(ORIGIN[0]), oy = sy(ORIGIN[1]);
     if (target) {

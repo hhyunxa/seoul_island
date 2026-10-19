@@ -147,7 +147,7 @@ export class PoseInput {
     g.textAlign = 'center';
     if (f) {
       g.strokeStyle = '#6fdc4a'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
-      g.font = '700 24px Galmuri11, monospace'; g.lineWidth = 5; g.strokeStyle = '#3f1d0b';
+      g.font = '24px Jua, monospace'; g.lineWidth = 5; g.strokeStyle = '#3f1d0b';
       g.strokeText(POSE_LABEL[f], W / 2, H / 2); g.fillStyle = '#fff'; g.fillText(POSE_LABEL[f], W / 2, H / 2);
     }
     let msg = '몸이 화면에 보이게 서 주세요';
@@ -157,7 +157,7 @@ export class PoseInput {
       msg = vis(15) < 0.4 && vis(16) < 0.4 ? '두 손이 화면에 보이게!' : sw > 0.45 ? '조금 뒤로 가 주세요' : sw < 0.1 ? '조금 앞으로 와 주세요' : this.label || POSE_LABEL[this.g.pose]; // label: 게임이 정한 안내 (없으면 퍼레이드 동작 이름)
     }
     g.fillStyle = 'rgba(63,29,11,.75)'; g.fillRect(0, H - 24, W, 24);
-    g.fillStyle = '#fff'; g.font = '700 14px Galmuri11, monospace';
+    g.fillStyle = '#fff'; g.font = '14px Jua, monospace';
     g.fillText(msg, W / 2, H - 7);
   }
 }

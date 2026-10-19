@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { canvasTexture } from '../textures.js';
@@ -95,7 +96,7 @@ export class KpopGame extends MiniGame {
     // LED 전광판 (캔버스로 그려서 움직임)
     const c = document.createElement('canvas'); c.width = 96; c.height = 32;
     this.led = { c, g: c.getContext('2d'), tex: canvasTexture(c), t: 0 };
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(12, 4, 0.1), new THREE.MeshBasicMaterial({ map: this.led.tex }));
+    const wall = new THREE.Mesh(rbox(12, 4, 0.1), new THREE.MeshBasicMaterial({ map: this.led.tex }));
     wall.position.set(0, 2.9, -3.4); s.add(wall);
     box(12.4, 4.4, 0.2, '#2a2236', 0, 2.9, -3.5, s);
     // 조명: 무대 위 반투명 빛기둥이 좌우로 훑음
@@ -147,7 +148,7 @@ export class KpopGame extends MiniGame {
     const { g, c, tex } = this.led;
     for (let x = 0; x < c.width; x += 4) { g.fillStyle = `hsl(${(x * 4 + t * 120) % 360},90%,${30 + flash * 25}%)`; g.fillRect(x, 0, 4, c.height); }
     g.fillStyle = 'rgba(10,6,20,.55)'; g.fillRect(0, 9, c.width, 14);
-    g.fillStyle = '#ffffff'; g.font = '700 11px Galmuri11, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#ffffff'; g.font = '11px Jua, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('GANGNAM K-POP', c.width / 2, 16);
     tex.needsUpdate = true;
   }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { rng, signTexture } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -104,10 +105,10 @@ export class FeedGame extends MiniGame {
     const r = rng(14);
     for (let i = 0; i < 12; i++) { const t = makeTree(r, i % 3 ? 'round' : 'pine'); t.position.set(-13 + i * 2.4 + r(), 0, -7.5 - r() * 2); s.add(t); }
     // 안내판: 동물마다 좋아하는 먹이
-    const board = new THREE.Mesh(new THREE.BoxGeometry(5, 1.0, 0.1), new THREE.MeshLambertMaterial({ map: signTexture('코끼리🍌 펭귄🐟 기린🌿 사자🍖', { w: 200, h: 36, size: 14, bg: '#fff3d0' }) }));
+    const board = new THREE.Mesh(rbox(5, 1.0, 0.1), toonMat({ map: signTexture('코끼리🍌 펭귄🐟 기린🌿 사자🍖', { w: 200, h: 36, size: 14, bg: '#fff3d0' }) }));
     board.position.set(-6.5, 1.4, -5.6); s.add(board); box(0.12, 1.0, 0.12, '#6b3b1c', -6.5, 0.5, -5.6, s);
     // 먹이 주는 자리 표시 (노란 줄)
-    const zone = box(WIN * 2, 0.02, 1.4, '#ffd23f', FEED_X, 0.02, PATH_Z, s); zone.material = new THREE.MeshLambertMaterial({ color: '#ffd23f', transparent: true, opacity: 0.45 }); zone.castShadow = false;
+    const zone = box(WIN * 2, 0.02, 1.4, '#ffd23f', FEED_X, 0.02, PATH_Z, s); zone.material = toonMat({ color: '#ffd23f', transparent: true, opacity: 0.45 }); zone.castShadow = false;
     // 판매대 (내 앞)
     box(5, 0.9, 0.8, '#c98a46', 0, 0.45, 1.2, s); box(5.2, 0.1, 1.0, '#e8413a', 0, 0.95, 1.2, s);
     this.buckets = FOODS.map((f, i) => {

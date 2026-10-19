@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { Avatar } from '../character.js';
 import { rng, canvasTexture, drawTile } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -43,7 +44,7 @@ export class MiniGame {
     const g = c.getContext('2d'); const r = rng(seed);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) drawTile(g, x * 16, y * 16, pick(x, y), r);
     const tex = canvasTexture(c);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), toonMat({ map: tex }));
     m.rotation.x = -Math.PI / 2; m.receiveShadow = true;
     this.scene.add(m);
     return m;

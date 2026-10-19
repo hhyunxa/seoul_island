@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { makePlane } from '../landmarks.js';
 import { waterTexture, rng } from '../textures.js';
@@ -68,8 +69,8 @@ export class FlightGame extends MiniGame {
     s.fog = new THREE.Fog('#8fd3f5', 26, 48);
     this.lights({ pos: [-4, 16, 10], size: 14, intensity: 1.8 });
     // 땅·바다 조각 (스크롤하며 재사용)
-    this.landMat = new THREE.MeshLambertMaterial({ color: '#7fbf5a' });
-    const wt = waterTexture(); wt.repeat.set(4, 4); this.seaMat = new THREE.MeshLambertMaterial({ map: wt }); this.waterTex = wt;
+    this.landMat = toonMat({ color: '#7fbf5a' });
+    const wt = waterTexture(); wt.repeat.set(4, 4); this.seaMat = toonMat({ map: wt }); this.waterTex = wt;
     this.chunks = [];
     // 먼 구름 (느린 시차)
     this.deco = [];

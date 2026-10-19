@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { Avatar } from '../character.js';
 import { waterTexture, signTexture, rng } from '../textures.js';
@@ -52,7 +53,7 @@ export class DuckBoatGame extends MiniGame {
     this.sunTarget = new THREE.Object3D(); s.add(this.sunTarget); this.sun.target = this.sunTarget;
     // 강물
     const wt = waterTexture(); wt.repeat.set(30, 120); this.waterTex = wt;
-    const water = new THREE.Mesh(new THREE.PlaneGeometry(60, L + 80), new THREE.MeshLambertMaterial({ map: wt }));
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(60, L + 80), toonMat({ map: wt }));
     water.rotation.x = -Math.PI / 2; water.position.set(0, -0.15, -L / 2); water.receiveShadow = true; s.add(water);
     // 양쪽 둔치 (잔디 + 모래 + 산책로)
     for (const sx of [-1, 1]) {
@@ -81,7 +82,7 @@ export class DuckBoatGame extends MiniGame {
       const g = new THREE.Group(); g.position.z = z;
       for (const x of [-HW - 0.6, HW + 0.6]) { box(0.35, 4, 0.35, '#f4ead8', x, 1.8, 0, g); box(0.5, 0.4, 0.5, '#e8413a', x, 3.9, 0, g); }
       if (text) {
-        const b = new THREE.Mesh(new THREE.BoxGeometry(2 * HW + 1.2, 0.9, 0.1), new THREE.MeshLambertMaterial({ map: signTexture(text, { w: 160, h: 22, size: 14, bg }) }));
+        const b = new THREE.Mesh(rbox(2 * HW + 1.2, 0.9, 0.1), toonMat({ map: signTexture(text, { w: 160, h: 22, size: 14, bg }) }));
         b.position.y = 3.4; g.add(b);
       }
       for (let i = 0; i < 14; i++) box(1, 0.04, 0.5, i % 2 ? '#222' : '#fff', -HW + 0.5 + i, -0.08, 0, g).castShadow = false;

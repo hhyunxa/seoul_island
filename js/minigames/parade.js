@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { Avatar } from '../character.js';
 import { rng, signTexture } from '../textures.js';
@@ -74,7 +75,7 @@ export class ParadeGame extends MiniGame {
       box(3.0, 1.0, 0.06, '#bfe6fa', x, 0.8, -4.98, s);
     }
     for (let i = 0; i < 40; i++) { const f = box(0.3, 0.34, 0.02, flagC[i % flagC.length], -16 + i * 0.82, 3.3 - Math.abs(Math.sin(i * 0.4)) * 0.3, -3.5, s); f.castShadow = false; }
-    const banner = new THREE.Mesh(new THREE.BoxGeometry(7, 0.8, 0.1), new THREE.MeshLambertMaterial({ map: signTexture('이태원 지구촌 축제', { w: 160, h: 20, size: 13, bg: '#2f7fd8', fg: '#ffffff' }) }));
+    const banner = new THREE.Mesh(rbox(7, 0.8, 0.1), toonMat({ map: signTexture('이태원 지구촌 축제', { w: 160, h: 20, size: 13, bg: '#2f7fd8', fg: '#ffffff' }) }));
     banner.position.set(0, 4.1, -3.5); s.add(banner);
     for (const x of [-3.6, 3.6]) box(0.2, 4.4, 0.2, '#f4ead8', x, 2.2, -3.5, s);
     for (let i = 0; i < 10; i++) { const t = makeTree(r, 'round'); t.position.set(-17 + i * 3.8, 0, -8.6 - r()); t.scale.setScalar(1.3); s.add(t); } // 가게 뒤쪽 (화면을 가리지 않게)

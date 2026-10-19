@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { rng, signTexture } from '../textures.js';
@@ -50,9 +51,9 @@ export class CatchBallGame extends MiniGame {
       const a = (i / 8) * Math.PI;
       const beam = box(0.4, 0.4, 46, '#c9cdd3', Math.cos(a) * 18, 4 + Math.sin(a) * 9, -8, s); beam.castShadow = false;
     }
-    const roof = new THREE.Mesh(new THREE.CylinderGeometry(18.5, 18.5, 46, 16, 1, true), new THREE.MeshLambertMaterial({ color: '#e9ecef', side: THREE.BackSide }));
+    const roof = new THREE.Mesh(new THREE.CylinderGeometry(18.5, 18.5, 46, 16, 1, true), toonMat({ color: '#e9ecef', side: THREE.BackSide }));
     roof.rotation.x = Math.PI / 2; roof.position.set(0, 4, -8); s.add(roof);
-    const board = new THREE.Mesh(new THREE.BoxGeometry(8, 1.6, 0.2), new THREE.MeshLambertMaterial({ map: signTexture('고척스카이돔', { w: 128, h: 26, size: 14, bg: '#2f4f8f', fg: '#ffffff' }) }));
+    const board = new THREE.Mesh(rbox(8, 1.6, 0.2), toonMat({ map: signTexture('고척스카이돔', { w: 128, h: 26, size: 14, bg: '#2f4f8f', fg: '#ffffff' }) }));
     board.position.set(0, 5.6, PZ - 12); s.add(board);
     for (const x of [-12, -6, 6, 12]) { const l = box(1.4, 0.3, 0.6, '#fffbe8', x, 11.5, -6, s); l.material = new THREE.MeshBasicMaterial({ color: '#fffbe8' }); }
 
@@ -62,7 +63,7 @@ export class CatchBallGame extends MiniGame {
     this.partner.root.position.set(0, 0.2, PZ); this.partner.root.rotation.y = 0; s.add(this.partner.root);
     box(0.36, 0.3, 0.3, '#7a4a26', 0, 0, 0.0, this.partner.joints.armL).position.set(0, -0.62, 0.05); // 상대 글러브
     // 공
-    const ballMat = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true });
+    const ballMat = toonMat({ color: '#ffffff', flatShading: true });
     this.ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 0), ballMat); this.ball.castShadow = true; s.add(this.ball);
     box(0.02, 0.2, 0.02, '#e8413a', 0.06, 0, 0, this.ball); box(0.02, 0.2, 0.02, '#e8413a', -0.06, 0, 0, this.ball);
     this.shadow = new THREE.Mesh(new THREE.CircleGeometry(0.16, 8), new THREE.MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3 }));

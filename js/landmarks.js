@@ -1,5 +1,6 @@
 // 서울 25개 구 랜드마크 (도트 섬과 같은 상자 그래픽)
 import * as THREE from 'three';
+import { basic, rbox, toonMat } from './toon.js';
 import { Merger, vcMat, lmat } from './city.js';
 import { LANDMARKS, GU } from './seoulMap.js';
 import { box, mat, makeSign, makeChicken } from './world.js';
@@ -278,7 +279,7 @@ const B = {
     box(1.4, 0.7, 0.6, '#c98a46', 0, 0.35, 0, st); box(1.6, 0.08, 0.8, '#e8413a', 0, 1.55, 0, st);
     for (const x of [-0.7, 0.7]) box(0.08, 0.85, 0.08, '#f4ead8', x, 1.1, 0.3, st);
     for (const [x, c] of [[-0.45, '#ffd23f'], [-0.15, '#7fb0d8'], [0.15, '#5fae3e'], [0.45, '#c0503a']]) box(0.22, 0.14, 0.22, c, x, 0.77, 0, st);
-    const fsg = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.32, 0.06), new THREE.MeshLambertMaterial({ map: signTexture('동물 먹이 주기', { w: 96, h: 22, size: 12, bg: '#ffd23f' }) }));
+    const fsg = new THREE.Mesh(rbox(1.4, 0.32, 0.06), toonMat({ map: signTexture('동물 먹이 주기', { w: 96, h: 22, size: 12, bg: '#ffd23f' }) }));
     fsg.position.set(0, 1.32, 0.34); st.add(fsg);
     add(st); col(-2.3, -0.9, 1.7, 2.3);
     marker(-1.6, 2.5, 2.0);
@@ -293,7 +294,7 @@ const B = {
       const x = -1.95 + i * 1.3;
       M.box(1.2, 1.6, 0.9, c, x, 0.8, -1.05); M.box(1.24, 0.14, 1.0, '#ffffff', x, 1.66, -1.0);
       M.box(0.9, 0.6, 0.04, '#bfe6fa', x, 0.65, -0.58);
-      const sg = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.26, 0.05), new THREE.MeshLambertMaterial({ map: signTexture(name, { w: 48, h: 14, size: 10, bg: '#ffffff' }) }));
+      const sg = new THREE.Mesh(rbox(1.0, 0.26, 0.05), toonMat({ map: signTexture(name, { w: 48, h: 14, size: 10, bg: '#ffffff' }) }));
       sg.position.set(x, 1.35, -0.57); add(sg);
     });
     col(-2.6, 2.6, -1.55, -0.55);
@@ -306,7 +307,7 @@ const B = {
     }
     // 관광안내소 부스 (미니게임 입구)
     M.box(0.9, 1.1, 0.7, '#e8413a', 0.1, 0.55, 0.65); M.box(1.0, 0.1, 0.8, '#ffffff', 0.1, 1.15, 0.65);
-    const ib = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.06), new THREE.MeshLambertMaterial({ map: signTexture('i', { w: 16, h: 16, size: 14, bg: '#e8413a', fg: '#ffffff' }) }));
+    const ib = new THREE.Mesh(rbox(0.5, 0.5, 0.06), toonMat({ map: signTexture('i', { w: 16, h: 16, size: 14, bg: '#e8413a', fg: '#ffffff' }) }));
     ib.position.set(0.1, 1.5, 1.0); add(ib);
     col(-0.35, 0.55, 0.3, 1.0);
     marker(0.1, 2.3, 1.3);
@@ -317,7 +318,7 @@ const B = {
   itaewon({ M, col, sign, marker, mini, add }) {
     // 축제 아치 + 만국기 줄
     for (const x of [-2.2, 2.2]) { M.box(0.25, 2.6, 0.25, '#f4ead8', x, 1.3, -0.4); col(x - 0.15, x + 0.15, -0.55, -0.25); }
-    const banner = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.5, 0.08), new THREE.MeshLambertMaterial({ map: signTexture('이태원 지구촌 축제', { w: 128, h: 16, size: 11, bg: '#2f7fd8', fg: '#ffffff' }) }));
+    const banner = new THREE.Mesh(rbox(4.6, 0.5, 0.08), toonMat({ map: signTexture('이태원 지구촌 축제', { w: 128, h: 16, size: 11, bg: '#2f7fd8', fg: '#ffffff' }) }));
     banner.position.set(0, 2.45, -0.4); add(banner);
     const flagC = ['#e8413a', '#ffd23f', '#2f7fd8', '#5fc04a', '#ffffff', '#9b5de5', '#f28c28'];
     for (let i = 0; i < 18; i++) { const x = -2.1 + i * 0.25; M.box(0.18, 0.2, 0.02, flagC[i % flagC.length], x, 2.02 - Math.sin((i / 17) * Math.PI) * 0.25, -0.4); }
@@ -337,7 +338,7 @@ const B = {
     M.box(3.4, 0.12, 2.6, '#2a2236', 0, 2.66, -0.2);
     col(-1.6, 1.6, -1.4, 1.0);
     // 네온 간판 (조명 영향을 안 받아서 밤에 더 눈에 띔)
-    const neon = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.55, 0.08), new THREE.MeshBasicMaterial({ map: signTexture('코인노래방', { w: 112, h: 24, size: 15, bg: '#2a1036', fg: '#ff7ad9' }) }));
+    const neon = new THREE.Mesh(rbox(2.6, 0.55, 0.08), basic({ map: signTexture('코인노래방', { w: 112, h: 24, size: 15, bg: '#2a1036', fg: '#ff7ad9' }) }));
     neon.position.set(0, 2.2, 1.06); add(neon);
     marker(0, 2.9, 1.5);
     mini('karaoke', '코인노래방 리듬게임', 0, 1.5, 0, 2.2, 1.6);
@@ -354,7 +355,7 @@ const B = {
       for (const [dx, c] of [[-0.12, '#a0703a'], [0.1, '#ffd23f']]) M.box(0.16, 0.18, 0.16, c, x + dx, 0.66, 0.2);
     }
     col(-1.1, 1.1, -1.2, 0.62);
-    const neon = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.4, 0.06), new THREE.MeshBasicMaterial({ map: signTexture('인형뽑기', { w: 80, h: 18, size: 12, bg: '#2a1036', fg: '#ffe14f' }) }));
+    const neon = new THREE.Mesh(rbox(1.8, 0.4, 0.06), basic({ map: signTexture('인형뽑기', { w: 80, h: 18, size: 12, bg: '#2a1036', fg: '#ffe14f' }) }));
     neon.position.set(0, 1.7, 0.63); add(neon);
     marker(0, 2.6, 1.0);
     mini('claw', '홍대 인형뽑기', 0, 1.1, 0, 1.7, 1.4);
@@ -376,7 +377,7 @@ const B = {
     box(0.6, 0.2, 0.9, '#e8413a', 0, 0.18, 0, kart); box(0.3, 0.3, 0.3, '#222', 0, 0.38, -0.1, kart);
     for (const [x, z] of [[-0.32, -0.3], [0.32, -0.3], [-0.32, 0.32], [0.32, 0.32]]) box(0.12, 0.2, 0.2, '#1a1a1a', x, 0.1, z, kart);
     add(kart);
-    const bsg = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.32, 0.06), new THREE.MeshLambertMaterial({ map: signTexture('운전면허시험장', { w: 112, h: 18, size: 12, bg: '#ffffff', fg: '#1f4f9a' }) }));
+    const bsg = new THREE.Mesh(rbox(2.2, 0.32, 0.06), toonMat({ map: signTexture('운전면허시험장', { w: 112, h: 18, size: 12, bg: '#ffffff', fg: '#1f4f9a' }) }));
     bsg.position.set(0, 1.25, 0.02); add(bsg);
     marker(0, 2.4, 2.4);
     mini('kart', '카트 레이싱', 0, 2.4, 0, 3.4, 1.7);
@@ -384,20 +385,20 @@ const B = {
   },
   // ── 동대문구: 경동시장 (과일 받기) ──
   gyeongdong({ M, col, sign, marker, mini, add }) {
-    const plank = new THREE.MeshLambertMaterial({ map: plankTexture() }); plank.map.repeat.set(3, 2);
+    const plank = toonMat({ map: plankTexture() }); plank.map.repeat.set(3, 2);
     const cols = [['#e8413a', '#fff4e0'], ['#2f7fd8', '#ffffff'], ['#2fa84f', '#fff4e0']];
     cols.forEach(([a, b], i) => {
       const st = new THREE.Group(); st.position.set(-2.2 + i * 2.2, 0, -0.6);
       box(1.9, 0.8, 0.9, plank, 0, 0.4, 0, st);
       for (const px of [-0.9, 0.9]) for (const pz of [-0.4, 0.4]) box(0.1, 1.9, 0.1, '#6b3b1c', px, 0.95, pz, st);
       const awn = stripeTexture(a, b); awn.repeat.set(2, 1);
-      box(2.1, 0.12, 1.3, new THREE.MeshLambertMaterial({ map: awn }), 0, 1.95, 0.1, st).rotation.x = 0.18;
+      box(2.1, 0.12, 1.3, toonMat({ map: awn }), 0, 1.95, 0.1, st).rotation.x = 0.18;
       const fruit = [['#e8413a', '#ff9a2e'], ['#9b5de5', '#f2c21b'], ['#7a4a26', '#5fae3e']][i];
       for (let j = 0; j < 6; j++) box(0.2, 0.2, 0.2, fruit[j % 2], -0.6 + (j % 3) * 0.6, 0.92, -0.15 + Math.floor(j / 3) * 0.3, st);
       add(st);
     });
     col(-3.3, 3.3, -1.1, -0.1);
-    const ss = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.6, 0.08), new THREE.MeshLambertMaterial({ map: signTexture('경동시장', { w: 128, h: 28, size: 15, bg: '#ffd23f' }) }));
+    const ss = new THREE.Mesh(rbox(3.4, 0.6, 0.08), toonMat({ map: signTexture('경동시장', { w: 128, h: 28, size: 15, bg: '#ffd23f' }) }));
     ss.position.set(0, 2.55, 0.2); add(ss);
     marker(0, 3.2, 0.3);
     mini('fruit', '과일 받기 시작', 0, 1.0, 0, 2.2, 1.9);
@@ -534,7 +535,7 @@ const B = {
       M.box(w, 2.0, 1.4, c, x, 1.0, -1.0);
       if (c !== '#3a3f4a') for (let y = 0.35; y < 2; y += 0.35) M.box(w + 0.02, 0.04, 1.42, '#7a2f22', x, y, -1.0);
       M.box(w * 0.7, 0.8, 0.04, '#bfe6fa', x, 0.65, -0.29);
-      const sg = new THREE.Mesh(new THREE.BoxGeometry(Math.min(1.4, w - 0.1), 0.3, 0.05), new THREE.MeshLambertMaterial({ map: signTexture(name, { w: 64, h: 14, size: 10, bg: '#fff8e6' }) }));
+      const sg = new THREE.Mesh(rbox(Math.min(1.4, w - 0.1), 0.3, 0.05), toonMat({ map: signTexture(name, { w: 64, h: 14, size: 10, bg: '#fff8e6' }) }));
       sg.position.set(x, 1.65, -0.27); add(sg);
     }
     col(-2.9, 2.9, -1.75, -0.3);
@@ -666,7 +667,7 @@ const B = {
     // 대형 전광판
     const c = document.createElement('canvas'); c.width = 32; c.height = 20;
     const tex = new THREE.CanvasTexture(c); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.colorSpace = THREE.SRGBColorSpace;
-    const scr = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.2, 0.06), new THREE.MeshBasicMaterial({ map: tex }));
+    const scr = new THREE.Mesh(rbox(1.9, 1.2, 0.06), basic({ map: tex }));
     scr.position.set(l.x, 5.6, l.z + 0.93); world.scene.add(scr);
     world.screen = { c, ctx: c.getContext('2d'), tex, t: 0 };
     M.box(1.0, 0.5, 0.6, '#3f9a4a', 1.2, 0.25, 1.2); M.box(1.0, 0.05, 0.6, '#ffffff', 1.2, 0.52, 1.2); // 지하철 입구 (2호선 초록)
@@ -688,15 +689,15 @@ const B = {
     for (const s of [-1, 1]) M.box(0.22, 2.4, 0.5, '#dfe7ee', s * 0.22, 1.2 + H + 1.2, 0);
     M.box(0.1, H, 0.1, '#e9f0f6', 0, 1.2 + H / 2, 1.1);
     // 모서리 불빛 줄 + 꼭대기 경고등 (조명 영향 없이 밝아서 밤에 빛나 보임)
-    const glow = new THREE.MeshBasicMaterial({ color: '#fff3cf' });
+    const glow = basic({ color: '#fff3cf' });
     for (let k = 0; k < 4; k++) {
-      const a = (k / 4) * Math.PI * 2, line = new THREE.Mesh(new THREE.BoxGeometry(0.08, H, 0.08), glow);
+      const a = (k / 4) * Math.PI * 2, line = new THREE.Mesh(rbox(0.08, H, 0.08), glow);
       const r = 1.5 * (1 - 0.36); // 가운데 높이의 반지름
       line.position.set(Math.cos(a) * r, 1.2 + H / 2, Math.sin(a) * r);
       line.rotation.set(Math.sin(a) * 0.035, 0, -Math.cos(a) * 0.035); // 위로 갈수록 가늘어지는 몸통을 따라 살짝 기울임
       add(line);
     }
-    const beacon = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({ color: '#ff4a3a' }));
+    const beacon = new THREE.Mesh(rbox(0.3, 0.3, 0.3), basic({ color: '#ff4a3a' }));
     beacon.position.set(0, 1.2 + H + 2.6, 0); add(beacon);
     col(-2.1, 2.1, -2.1, 2.1);
     sign('롯데월드타워', '롯데월드타워 (송파구)', ['123층, 555m! 우리나라에서 가장 높은 롯데월드타워예요.\n(이 섬에서도 제일 높아요)', '남쪽 석촌호수엔 놀이공원의 성이 떠 있어요.'], 2.5, 2.0);
@@ -736,9 +737,9 @@ const B = {
     }
     // 닭장
     const coop = new THREE.Group(); coop.position.set(1.7, 0, -0.8);
-    const cpl = new THREE.MeshLambertMaterial({ map: plankTexture('#d9534a', '#a83a32', '#ea7a6e') }); cpl.map.repeat.set(2, 1);
+    const cpl = toonMat({ map: plankTexture('#d9534a', '#a83a32', '#ea7a6e') }); cpl.map.repeat.set(2, 1);
     box(2.2, 1.4, 1.6, cpl, 0, 0.7, 0, coop);
-    const cr = box(2.6, 0.25, 2.1, new THREE.MeshLambertMaterial({ map: roofTexture() }), 0, 1.55, 0, coop); cr.rotation.x = 0.12;
+    const cr = box(2.6, 0.25, 2.1, toonMat({ map: roofTexture() }), 0, 1.55, 0, coop); cr.rotation.x = 0.12;
     box(0.7, 0.8, 0.1, '#5b2f12', 0, 0.4, 0.82, coop);
     box(1.0, 0.08, 0.45, '#b5763b', 0, 0.04, 1.1, coop);
     add(coop);

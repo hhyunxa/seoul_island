@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { waterTexture, plankTexture, rng } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -41,10 +42,10 @@ export class FishingGame extends MiniGame {
     this.lights({ pos: [-8, 16, 6], size: 14 });
     // 물
     const wt = waterTexture(); wt.repeat.set(60, 60); this.waterTex = wt;
-    const water = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshLambertMaterial({ map: wt }));
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), toonMat({ map: wt }));
     water.rotation.x = -Math.PI / 2; water.receiveShadow = true; s.add(water);
     // 부두
-    const pl = new THREE.MeshLambertMaterial({ map: plankTexture('#a86c3a', '#7a4a26', '#c98a50') });
+    const pl = toonMat({ map: plankTexture('#a86c3a', '#7a4a26', '#c98a50') });
     pl.map.repeat.set(1, 5);
     box(2.2, 0.18, 9, pl, 0, 0.3, 4.2, s);
     for (const z of [0, 3, 6]) for (const x of [-1, 1]) box(0.22, 1.4, 0.22, '#6b3b1c', x, -0.3, z, s);
@@ -52,10 +53,10 @@ export class FishingGame extends MiniGame {
     box(0.5, 0.06, 0.5, '#3a6fd8', 0.7, 0.9, 1.6, s);
     // 먼 섬
     const r = rng(77);
-    const far = new THREE.Mesh(new THREE.BoxGeometry(70, 1.2, 8), new THREE.MeshLambertMaterial({ color: '#74b84f' }));
+    const far = new THREE.Mesh(rbox(70, 1.2, 8), toonMat({ color: '#74b84f' }));
     far.position.set(0, 0.2, -38); s.add(far);
     for (let i = 0; i < 18; i++) { const t = makeTree(r, r() < 0.5 ? 'pine' : 'round'); t.position.set(-32 + i * 3.8 + r(), 0.8, -37 + r() * 3); t.scale.multiplyScalar(1.6); s.add(t); }
-    for (let i = 0; i < 6; i++) { const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.04, 6), new THREE.MeshLambertMaterial({ color: '#4f9a35' })); lp.position.set(-6 + r() * 12, 0.03, -3 - r() * 10); s.add(lp); }
+    for (let i = 0; i < 6; i++) { const lp = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.04, 6), toonMat({ color: '#4f9a35' })); lp.position.set(-6 + r() * 12, 0.03, -3 - r() * 10); s.add(lp); }
     // 찌 + 낚싯줄
     this.bobber = new THREE.Group();
     box(0.16, 0.12, 0.16, '#ffffff', 0, 0, 0, this.bobber);

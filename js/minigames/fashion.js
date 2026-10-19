@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { signTexture } from '../textures.js';
@@ -78,7 +79,7 @@ export class FashionGame extends MiniGame {
       box(4.6, h, 2.6, c, x, h / 2, -4.6, s);
       if (c.startsWith('#a') || c.startsWith('#b') || c.startsWith('#9')) for (let y = 0.4; y < h; y += 0.4) box(4.62, 0.05, 2.62, '#7a2f22', x, y, -4.6, s); // 벽돌 줄눈
       box(3.4, 1.4, 0.06, '#bfe6fa', x, 1.1, -3.28, s);
-      const sg = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 0.08), new THREE.MeshLambertMaterial({ map: signTexture(name, { w: 96, h: 18, size: 12, bg: '#fff8e6' }) }));
+      const sg = new THREE.Mesh(rbox(2.6, 0.5, 0.08), toonMat({ map: signTexture(name, { w: 96, h: 18, size: 12, bg: '#fff8e6' }) }));
       sg.position.set(x, h - 0.5, -3.25); s.add(sg);
     });
     // 줄 전구

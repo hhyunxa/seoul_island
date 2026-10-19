@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { waterTexture, canvasTexture, drawTile, rng } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -31,7 +32,7 @@ function makeObstacle(kind) {
     g.userData.wings = [wl, wr];
     y0 = 2.05; w = 0.7; h = 0.3;
   } else { // coin
-    const m = new THREE.MeshLambertMaterial({ color: '#ffd23f', emissive: '#6a4a00' });
+    const m = toonMat({ color: '#ffd23f', emissive: '#6a4a00' });
     box(0.36, 0.36, 0.1, m, 0, 0, 0, g); box(0.12, 0.2, 0.12, '#fff6b0', 0, 0, 0.02, g);
     w = 0.45; h = 0.45;
   }
@@ -53,16 +54,16 @@ export class RunnerGame extends MiniGame {
     this.lights({ pos: [-4, 14, 10], size: 14 });
     // 바다
     const wt = waterTexture(); wt.repeat.set(50, 15); this.waterTex = wt;
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 60), new THREE.MeshLambertMaterial({ map: wt }));
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 60), toonMat({ map: wt }));
     sea.rotation.x = -Math.PI / 2; sea.position.set(0, -0.3, -32); s.add(sea);
     // 모래 길 (스크롤)
     const c = document.createElement('canvas'); c.width = 64; c.height = 96;
     const g = c.getContext('2d'); const r = rng(4);
     for (let y = 0; y < 6; y++) for (let x = 0; x < 4; x++) drawTile(g, x * 16, y * 16, 'sand', r);
     const tex = canvasTexture(c, true); tex.repeat.set(20, 16 / 6); this.sandTex = tex;
-    const sand = new THREE.Mesh(new THREE.PlaneGeometry(80, 16), new THREE.MeshLambertMaterial({ map: tex }));
+    const sand = new THREE.Mesh(new THREE.PlaneGeometry(80, 16), toonMat({ map: tex }));
     sand.rotation.x = -Math.PI / 2; sand.position.set(0, 0, 5); sand.receiveShadow = true; s.add(sand);
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(80, 3), new THREE.MeshLambertMaterial({ color: '#c9b27a' }));
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(80, 3), toonMat({ color: '#c9b27a' }));
     back.rotation.x = -Math.PI / 2; back.position.set(0, -0.12, -4.4); s.add(back);
     // 배경 야자수 (느린 시차 스크롤)
     this.deco = [];

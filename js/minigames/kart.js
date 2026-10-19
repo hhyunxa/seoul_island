@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { Avatar } from '../character.js';
 import { rng, signTexture } from '../textures.js';
@@ -46,7 +47,7 @@ export class KartGame extends MiniGame {
     this.lights({ pos: [-10, 30, 14], size: 45, intensity: 1.9 });
     this.sun.shadow.mapSize.set(2048, 2048);
     // 잔디
-    const grass = new THREE.Mesh(new THREE.PlaneGeometry(140, 110), new THREE.MeshLambertMaterial({ color: '#6cbb48' }));
+    const grass = new THREE.Mesh(new THREE.PlaneGeometry(140, 110), toonMat({ color: '#6cbb48' }));
     grass.rotation.x = -Math.PI / 2; grass.receiveShadow = true; s.add(grass);
     // 중심선
     const curve = new THREE.CatmullRomCurve3(CTRL.map(([x, z]) => new THREE.Vector3(x, 0, z)), true, 'centripetal');
@@ -70,7 +71,7 @@ export class KartGame extends MiniGame {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
       g.setIndex(idx); g.computeVertexNormals();
-      const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+      const m = new THREE.Mesh(g, toonMat({ vertexColors: true, side: THREE.DoubleSide }));
       m.receiveShadow = true; s.add(m); return m;
     };
     ribbon(-W / 2 - 0.6, W / 2 + 0.6, 0.015, '#e8413a', 4);   // 연석 (빨강/흰색)
@@ -88,7 +89,7 @@ export class KartGame extends MiniGame {
     // 출발 게이트 + 신호등
     const gate = new THREE.Group(); gate.position.copy(p0); gate.rotation.y = ang;
     for (const x of [-W / 2 - 1, W / 2 + 1]) box(0.3, 4, 0.3, '#3a3f46', x, 2, 0, gate);
-    const banner = new THREE.Mesh(new THREE.BoxGeometry(W + 2.3, 0.8, 0.1), new THREE.MeshLambertMaterial({ map: signTexture('도봉운전면허시험장 카트대회', { w: 200, h: 24, size: 13, bg: '#1f4f9a', fg: '#ffffff' }) }));
+    const banner = new THREE.Mesh(rbox(W + 2.3, 0.8, 0.1), toonMat({ map: signTexture('도봉운전면허시험장 카트대회', { w: 200, h: 24, size: 13, bg: '#1f4f9a', fg: '#ffffff' }) }));
     banner.position.set(0, 3.6, 0); gate.add(banner);
     this.lightsOn = [];
     for (let i = 0; i < 3; i++) { const l = box(0.45, 0.45, 0.12, '#330000', -0.6 + i * 0.6, 2.9, 0.08, gate); l.material = new THREE.MeshBasicMaterial({ color: '#330000' }); this.lightsOn.push(l); }
@@ -101,7 +102,7 @@ export class KartGame extends MiniGame {
       if (Math.abs(turn) < 0.05) continue;
       const side = turn > 0 ? -1 : 1, off = (W / 2 + 1.4) * side;
       const cone = new THREE.Group(); cone.position.set(p.x - t.z * off, 0, p.z + t.x * off);
-      const cm = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 6), new THREE.MeshLambertMaterial({ color: '#f28c28' })); cm.position.y = 0.3; cm.castShadow = true; cone.add(cm);
+      const cm = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 6), toonMat({ color: '#f28c28' })); cm.position.y = 0.3; cm.castShadow = true; cone.add(cm);
       box(0.4, 0.04, 0.4, '#f28c28', 0, 0.02, 0, cone); box(0.3, 0.08, 0.3, '#ffffff', 0, 0.3, 0, cone);
       s.add(cone);
     }
@@ -118,7 +119,7 @@ export class KartGame extends MiniGame {
       const t = makeTree(r, r() < 0.5 ? 'pine' : 'round'); t.position.set(x, 0, z); t.scale.setScalar(1.4); s.add(t);
     }
     box(10, 4, 5, '#e8e4dc', -15, 2, 0, s); box(10.4, 0.3, 5.4, '#2f7fd8', -15, 4.1, 0, s); // 트랙 안쪽 시험장 건물
-    const bs = new THREE.Mesh(new THREE.BoxGeometry(6, 1, 0.1), new THREE.MeshLambertMaterial({ map: signTexture('운전면허시험장', { w: 128, h: 22, size: 14, bg: '#ffffff', fg: '#1f4f9a' }) }));
+    const bs = new THREE.Mesh(rbox(6, 1, 0.1), toonMat({ map: signTexture('운전면허시험장', { w: 128, h: 22, size: 14, bg: '#ffffff', fg: '#1f4f9a' }) }));
     bs.position.set(-15, 3, 2.55); s.add(bs);
     // 카트 4대
     this.karts = KARTS.map((k, i) => {

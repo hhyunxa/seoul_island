@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>두근두근 서울섬</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/vision_bundle.mjs"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="view" tabindex="0" aria-label="서울섬 3D 화면. WASD 또는 클릭으로 이동, 드래그로 시점 회전"></canvas>
+<div id="fade"></div>
+<div class="hud" id="loading">서울섬을 불러오는 중…</div>
+
+<!-- 1. 주민 등록 (꾸미기) -->
+<section id="makeScreen" class="screen hidden">
+  <div class="panel make-panel">
+    <h1 class="title">두근두근 서울섬</h1>
+    <p class="lead">서울섬에 이사 온 걸 환영해요! 나를 소개해 주세요</p>
+    <div class="make-body">
+      <div class="make-preview"><canvas id="makeFace" width="160" height="160"></canvas><small>3D 모습은 뒤에서 볼 수 있어요</small></div>
+      <div class="make-opts">
+        <label class="opt"><span>이름</span><input id="nameInput" maxlength="8" placeholder="이름 입력" autocomplete="off"></label>
+        <div class="opt"><span>누구?</span><div class="chips" id="optType"></div></div>
+        <div class="opt" id="rowSkin"><span>피부</span><div class="chips" id="optSkin"></div></div>
+        <div class="opt" id="rowHair"><span>머리</span><div class="chips" id="optHair"></div></div>
+        <div class="opt hidden" id="rowFur"><span>털색</span><div class="chips" id="optFur"></div></div>
+        <div class="opt"><span>윗옷</span><div class="chips" id="optShirt"></div></div>
+        <div class="opt"><span>바지</span><div class="chips" id="optPants"></div></div>
+      </div>
+    </div>
+    <div class="btn-row"><button id="enterWorld" class="btn big green" type="button">서울섬으로 출발!</button></div>
+  </div>
+</section>
+
+<!-- 2. 월드 HUD (원래 서울섬 배치) -->
+<section id="hud" class="hidden">
+  <div class="hud-tl">
+    <span class="pill" id="zoneP"><span id="area">강북</span><span id="zone">광화문광장</span></span>
+    <span class="pill" id="bell"><span class="coin"></span><b id="hudCoins">0</b> 벨</span>
+    <button type="button" class="pill btn-pill" id="cabBtn" title="택시 부르기 (T)">🚕 택시 <small>T</small></button>
+  </div>
+  <div class="mapWrap" id="mapWrap"><canvas id="minimap" title="M·클릭: 지도 크게/작게 · 휠: 확대/축소 · 큰 지도는 드래그로 이동"></canvas></div>
+  <div id="clock"><small id="hudDate">10월 19일 · 월요일 · 서울섬</small><b><em id="hudTime">6:00</em> <span id="hudAmPm">AM</span></b></div>
+  <div id="help">
+    <span><b>WASD</b> 이동 <b>Shift</b> 달리기 <b>Space</b> 점프</span>
+    <span><b>클릭</b> 그곳으로 걷기 <b>드래그</b> 시점 <b>휠</b> 확대</span>
+    <span><b>E</b> 말 걸기 · 타기 <b>M</b> 지도 <b>T</b> 택시 <b>R</b> 시점</span>
+  </div>
+  <div id="pad">
+    <span></span>
+    <button type="button" data-k="KeyW" aria-label="앞으로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 15 L12 9 L18 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    <span></span>
+    <button type="button" data-k="KeyA" aria-label="왼쪽으로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 6 L9 12 L15 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    <button type="button" data-k="KeyS" aria-label="뒤로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 9 L12 15 L18 9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+    <button type="button" data-k="KeyD" aria-label="오른쪽으로 걷기"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 6 L15 12 L9 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+  </div>
+  <div id="hint">WASD로 서울섬을 걸어 보세요<br>땅을 클릭해도 그곳으로 걸어가요</div>
+  <button type="button" id="prompt" class="hidden"><span class="k">E</span><span id="promptT"></span></button>
+  <div id="dialog" class="hidden">
+    <span id="dialogName"></span>
+    <button type="button" id="dialogText"></button>
+    <div id="dialogChoice" class="hidden">
+      <button type="button" class="choice on" data-c="yes">할래!</button>
+      <button type="button" class="choice" data-c="no">다음에</button>
+    </div>
+  </div>
+  <!-- 택시 -->
+  <div id="cabPanel" class="panel hidden">
+    <h2>🚕 택시 부르기</h2>
+    <p class="subway-sub">어디로 갈까요? · 걸어서 10초 거리마다 10벨</p>
+    <input id="cabSearch" type="text" placeholder="목적지 검색 (예: 남산, 롯데, 강남역, 낚시)" autocomplete="off" spellcheck="false">
+    <div id="cabList" class="cab-list"></div>
+    <div class="btn-row"><button class="btn" id="cabClose" type="button">닫기 (Esc)</button></div>
+  </div>
+  <!-- 지하철 -->
+  <div id="subwayPanel" class="panel hidden">
+    <h2><span class="line2-badge">2</span> 2호선 <b id="subwayHere"></b>역</h2>
+    <p class="subway-sub">어디로 갈까요? 역을 누르거나 숫자키를 눌러요</p>
+    <div class="subway-loop" id="subwayLoop"></div>
+    <div class="btn-row"><button class="btn" id="subwayClose" type="button">닫기 (Esc)</button></div>
+  </div>
+</section>
+<div id="travel" class="hidden">
+  <div class="travel-tunnel"><div class="travel-train"><i></i><i></i><i></i></div></div>
+  <div class="travel-text" id="travelText"></div>
+</div>
+
+<!-- 3. 미니게임 HUD -->
+<section id="miniHud" class="hidden">
+  <div class="mini-top">
+    <div class="mini-title" id="miniTitle"></div>
+    <div class="hearts" id="hearts"></div>
+    <div class="timer" id="timerBox"><div id="timerFill"></div></div>
+    <div class="score">점수 <b id="miniScore">0</b> <span id="miniCombo"></span></div>
+    <div class="mini-time" id="miniTime"></div>
+  </div>
+  <button id="quitMini" class="btn" type="button" title="나가기 (Esc) · 이번 판 보상은 받지 못해요">✕ 나가기</button>
+  <div id="miniOverlay"></div>
+  <div class="hud-hint" id="miniHint"></div>
+</section>
+<div id="countdown" class="hidden"></div>
+<section id="resultScreen" class="screen hidden">
+  <div class="panel result-panel">
+    <h2 id="resultTitle">끝!</h2>
+    <div class="result-rows">
+      <div id="resultRows"></div>
+      <div>점수 <b id="rScore">0</b> <span id="rBest"></span></div>
+      <div class="earn"><i class="coin"></i> +<b id="rCoins">0</b>벨</div>
+    </div>
+    <div class="btn-row">
+      <button id="retryMini" class="btn" type="button">다시 하기</button>
+      <button id="exitMini" class="btn big green" type="button">서울섬으로 돌아가기</button>
+    </div>
+  </div>
+</section>
+<div id="floaters"></div>
+<div id="toast" class="hidden"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

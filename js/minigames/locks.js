@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { box, makeTree } from '../world.js';
 import { rng } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -18,8 +19,8 @@ const randLock = () => ({ color: COLORS[(Math.random() * 6) | 0], shape: SHAPES[
 
 function makeLock(l) {
   const g = new THREE.Group();
-  const body = new THREE.MeshLambertMaterial({ color: l.color.c, flatShading: true });
-  const ring = new THREE.MeshLambertMaterial({ color: l.ring.c });
+  const body = toonMat({ color: l.color.c, flatShading: true });
+  const ring = toonMat({ color: l.ring.c });
   if (l.shape.id === 'square') box(0.46, 0.42, 0.12, body, 0, 0, 0, g);
   else if (l.shape.id === 'round') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.12, 10), body); m.rotation.x = Math.PI / 2; g.add(m); }
   else {
@@ -63,7 +64,7 @@ export class LockGame extends MiniGame {
     // N서울타워 (뒤 배경)
     const T = new THREE.Group(); T.position.set(3.5, 0, -16);
     box(3, 1.4, 3, '#e8e2d6', 0, 0.7, 0, T);
-    const cyl = (r0, r1, h, c, y) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, 8), new THREE.MeshLambertMaterial({ color: c, flatShading: true })); m.position.y = y; T.add(m); };
+    const cyl = (r0, r1, h, c, y) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, h, 8), toonMat({ color: c, flatShading: true })); m.position.y = y; T.add(m); };
     cyl(0.5, 0.7, 12, '#f4f4f2', 7.4); cyl(1.5, 1.2, 1.1, '#e9e6df', 14); cyl(1.55, 1.55, 0.25, '#6fa8d6', 14.1); cyl(1.1, 1.4, 0.7, '#dcd8cf', 14.9);
     for (let i = 0; i < 6; i++) cyl(0.14, 0.16, 0.9, i % 2 ? '#ffffff' : '#e8413a', 15.8 + i * 0.9);
     s.add(T);

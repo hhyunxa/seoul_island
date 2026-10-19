@@ -1,0 +1,412 @@
+/* 낚시 */
+.fish-msg { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); background: var(--panel); border: 2.5px solid var(--line); padding: 8px 16px; font-weight: var(--weight); font-size: 16px; box-shadow: 0 4px 0 var(--shadow); white-space: nowrap; }
+.fish-msg.bad { color: #b0302a; }
+.fish-msg.bite { font-size: 26px; color: #e05a1a; animation: shake .3s ease-out infinite; }
+.power-bar { position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; font-weight: var(--weight); color: #fff; text-shadow: 2px 2px 0 var(--ink); }
+.power-bar div { width: 240px; height: 18px; border: 2.5px solid var(--line); background: #6b3a1a; }
+.power-bar i { display: block; height: 100%; background: linear-gradient(90deg, #7fd14f, #ffd23f 70%, #e8413a); }
+.reel { position: absolute; right: max(18%, 40px); top: 50%; transform: translateY(-50%); display: flex; gap: 8px; padding: 10px; background: #c98a46; border: 2.5px solid var(--line); box-shadow: inset 0 0 0 3px #8a4a1d, 0 4px 0 var(--shadow); }
+.reel-track { position: relative; width: 44px; height: 300px; background: #3d7fb8; border: 2.5px solid var(--line); overflow: hidden; }
+.reel-bar { position: absolute; left: 3px; right: 3px; background: rgba(127, 209, 79, .55); border: 2px solid #4f9a35; }
+.reel-bar.on { background: rgba(160, 240, 100, .85); }
+.reel-fish { position: absolute; left: 10px; width: 24px; height: 14px; clip-path: polygon(0 50%, 22% 0, 75% 0, 100% 30%, 100% 70%, 75% 100%, 22% 100%); border: 0; }
+.reel-prog { position: relative; width: 14px; height: 300px; border: 2.5px solid var(--line); background: #6b3a1a; }
+.reel-progfill { position: absolute; left: 0; right: 0; bottom: 0; background: #7fd14f; }
+.catch-card { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); background: var(--panel); border: 2.5px solid var(--line); padding: 10px 18px; font-size: 16px; box-shadow: 0 4px 0 var(--shadow); white-space: nowrap; animation: pop .25s ease-out; }
+.catch-card span { color: #8a5a35; margin-left: 6px; }
+.catch-card em { font-style: normal; margin-left: 8px; background: #e8413a; color: #fff; padding: 1px 6px; font-weight: var(--weight); }
+@keyframes pop { from { transform: translateX(-50%) scale(.6); } }
+
+#view.grabbing { cursor: grabbing; }
+
+
+/* 오리배: 인원 고르기 */
+.duck-pick { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); text-align: center; pointer-events: auto; }
+.duck-pick h3 { margin: 0 0 12px; font-size: 20px; }
+.duck-pick p { margin: 12px 0 0; font-size: 12px; }
+/* 자물쇠 찾기: 찾을 자물쇠 카드 */
+.lock-card { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); text-align: center; padding: 12px 14px; }
+.lock-card h3 { margin: 0 0 6px; font-size: 15px; }
+.lock-card canvas { width: 120px; height: 120px; image-rendering: auto; background: #e8eef2; border: 2.5px solid var(--line); display: block; margin: 0 auto; }
+.lock-card .desc { margin-top: 6px; font-size: 13px; font-weight: var(--weight); }
+.lock-card .prog { margin-top: 4px; font-size: 12px; }
+/* 캐치볼: 던지기 타이밍 바 */
+.catch-bar.hidden { display: none; }
+.catch-track { position: relative; }
+.catch-track .zone { position: absolute; left: 43%; width: 24%; top: 0; bottom: 0; background: #7fd14f; }
+.catch-track .perfect { position: absolute; left: 51%; width: 8%; top: 0; bottom: 0; background: #ffd23f; }
+.power-bar .catch-track i.needle { position: absolute; top: -5px; bottom: -5px; width: 4px; height: auto; margin-left: -2px; background: #fff; border: 1px solid var(--ink); }
+.mini-time { font-size: 13px; font-weight: var(--weight); color: #8a5a35; }
+.mini-top > * { white-space: nowrap; }
+
+/* ---------- 지하철 2호선 ---------- */
+.line2-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #33a23d; color: #fff; font-weight: var(--weight); font-size: 15px; border: 2px solid var(--line); vertical-align: middle; }
+#subwayPanel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 32px)); pointer-events: auto; text-align: center; }
+#subwayPanel h2 { margin: 0 0 4px; font-size: 22px; }
+.subway-sub { margin: 0 0 8px; font-size: 13px; }
+.subway-loop { position: relative; height: 250px; margin: 0 6px 12px; }
+.loop-line { position: absolute; left: 18%; right: 18%; top: 22%; bottom: 22%; border: 8px solid #33a23d; border-radius: 26px; box-shadow: 0 0 0 2px var(--ink), inset 0 0 0 2px var(--ink); }
+.subway-loop .stop { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 1px; background: none; border: 0; font-family: inherit; color: var(--ink); cursor: pointer; padding: 2px 4px; }
+.subway-loop .stop i { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 4px solid #33a23d; box-shadow: 0 0 0 2px var(--ink); }
+.subway-loop .stop b { font-size: 16px; background: var(--panel); border: 2px solid var(--line); padding: 0 6px; margin-top: 3px; }
+.subway-loop .stop small { font-size: 11px; font-weight: var(--weight); color: #1f5f2a; background: var(--panel); padding: 0 4px; position: relative; }
+.subway-loop .stop em { font-size: 10px; font-style: normal; color: #8a5a35; background: var(--panel); padding: 0 4px; position: relative; white-space: nowrap; }
+.subway-loop .stop:hover:not(.here) b { background: #b8f0a0; }
+.subway-loop .stop:hover:not(.here) i { transform: scale(1.2); }
+.subway-loop .stop.here { cursor: default; }
+.subway-loop .stop.here i { background: #ffd23f; animation: bob .6s ease-out infinite; }
+#travel { position: fixed; inset: 0; z-index: 45; background: #14181f; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; }
+#travel.hidden { display: none; }
+.travel-tunnel { width: min(640px, 90vw); height: 64px; position: relative; overflow: hidden; border-top: 4px solid #3a404a; border-bottom: 4px solid #3a404a;
+  background: repeating-linear-gradient(90deg, #1c2129 0 46px, #ffd27a 46px 52px, #1c2129 52px 120px); background-size: 120px 100%; animation: tunnel .25s ease-out infinite; }
+@keyframes tunnel { to { background-position: -120px 0; } }
+.travel-train { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); display: flex; gap: 4px; animation: rattle .2s ease-out infinite; }
+.travel-train i { width: 110px; height: 40px; background: #dfe3e6; border: 2.5px solid var(--line); box-shadow: inset 0 -8px 0 #33a23d, inset 0 8px 0 #9fd6f2; }
+@keyframes rattle { 50% { transform: translateX(-50%) translateY(2px); } }
+.travel-text { color: #fff; font-size: 22px; font-weight: var(--weight); text-align: center; text-shadow: 2px 2px 0 #000; line-height: 1.5; }
+.travel-text small { font-size: 14px; color: #b8f0a0; }
+
+/* ---------- 동물 먹이 주기 ---------- */
+.feed-bar { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: auto; }
+.feed-bar .btn { font-size: 15px; padding: 8px 12px; }
+.feed-bar .btn b { background: var(--ink); color: #fff; padding: 0 5px; margin-right: 4px; }
+.feed-bar .btn.off { opacity: .35; filter: grayscale(1); }
+.feed-bubble { position: absolute; transform: translate(-50%, -100%); background: var(--panel); border: 2.5px solid var(--line); border-radius: 10px; padding: 2px 8px; font-size: 20px; font-weight: var(--weight); min-width: 28px; text-align: center; box-shadow: 0 4px 0 var(--shadow); }
+.feed-bubble.hidden { display: none; }
+
+/* ---------- 카트 레이싱 ---------- */
+.kart-map { position: absolute; left: 14px; top: 78px; border: 2.5px solid var(--line); border-radius: 6px; image-rendering: auto; }
+.kart-speed { position: absolute; right: 18px; bottom: 44px; color: #fff; font-size: 22px; font-weight: var(--weight); text-shadow: 2px 2px 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
+
+/* ---------- 코인노래방 리듬게임 ---------- */
+.kara-pick { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 8px; min-width: 320px; pointer-events: auto; text-align: center; }
+.kara-pick h3 { margin: 0 0 4px; font-size: 20px; }
+.kara-pick .btn { text-align: left; }
+.kara-pick .btn b { background: var(--ink); color: #fff; padding: 0 5px; margin-right: 6px; }
+.kara-pick .btn small { float: right; font-size: 11px; margin-left: 10px; }
+.kara-pick p { margin: 4px 0 0; font-size: 12px; }
+.kara-hw { position: absolute; left: 50%; top: 76px; bottom: 40px; transform: translateX(-50%); width: min(300px, 70vw); display: flex; background: rgba(10, 6, 20, .72); border: 3px solid #ff7ad9; box-shadow: 0 0 0 3px var(--ink), 0 0 18px rgba(255,122,217,.5); }
+.kara-hw .lane { position: relative; flex: 1; border-right: 2px solid rgba(255,255,255,.12); overflow: hidden; }
+.kara-hw .lane:last-of-type { border-right: 0; }
+.kara-hw .lane.press { background: rgba(255,255,255,.14); }
+.kara-hw .key { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); width: 34px; height: 30px; display: flex; align-items: center; justify-content: center; background: #2a2236; border: 2px solid #fff; color: #fff; font-weight: var(--weight); }
+.kara-hw .lane.press .key { background: #ff7ad9; color: var(--ink); }
+.kara-hw .hitline { position: absolute; left: 0; right: 0; bottom: 52px; height: 6px; background: #fff; box-shadow: 0 0 10px #fff; pointer-events: none; }
+.kara-hw .note { position: absolute; left: 10%; width: 80%; top: 0; height: 14px; margin-top: -7px; border: 2px solid var(--line); display: none; }
+.kara-hw .note.l0 { background: #ff4fa8; } .kara-hw .note.l1 { background: #4fd8ff; } .kara-hw .note.l2 { background: #ffe14f; } .kara-hw .note.l3 { background: #7fd14f; }
+.kara-hw .note.miss { opacity: .3; }
+.kara-hw .judge { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; font-size: 26px; font-weight: var(--weight); color: #fff; text-shadow: 3px 3px 0 var(--ink); opacity: 0; }
+.kara-hw .judge.show { animation: judgePop .5s ease-out forwards; }
+.kara-hw .judge.perfect { color: #ffe14f; } .kara-hw .judge.great { color: #4fd8ff; } .kara-hw .judge.good { color: #7fd14f; } .kara-hw .judge.miss { color: #ff6b6b; }
+@keyframes judgePop { 0% { opacity: 1; transform: scale(1.3); } 60% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+
+/* ---------- 명동 길 안내 ---------- */
+.guide-q { position: absolute; transform: translate(-50%, -100%); text-align: center; font-size: 15px; min-width: 200px; }
+.guide-q.hidden { display: none; }
+.guide-q .hello { font-size: 13px; color: #8a5a35; }
+.guide-q b { color: #1f4f9a; font-size: 17px; }
+.guide-q .pat { margin-top: 6px; height: 8px; border: 2px solid var(--line); background: #6b3a1a; }
+.guide-q .pat i { display: block; height: 100%; background: #7fd14f; }
+.guide-pad { position: absolute; right: 18px; bottom: 44px; display: grid; grid-template-columns: repeat(3, 66px); gap: 5px; pointer-events: auto; }
+.guide-pad .btn { padding: 6px 2px; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.guide-pad .btn b { font-size: 11px; background: var(--ink); color: #fff; padding: 0 4px; }
+.guide-pad .mid { display: flex; align-items: center; justify-content: center; font-weight: var(--weight); font-size: 13px; color: #fff; background: #e8413a; border: 2.5px solid var(--line); }
+.guide-mapbtn { position: absolute; left: 18px; bottom: 44px; pointer-events: auto; }
+.guide-map { position: absolute; left: 18px; top: 76px; width: min(420px, 46vw); image-rendering: auto; border: 2.5px solid var(--line); border-radius: 6px; background: #3e84c4; }
+.guide-map.hidden { display: none; }
+
+/* ---------- 이태원 퍼레이드 ---------- */
+.parade-track { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); display: flex; gap: 6px; }
+.parade-track .slot { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; background: rgba(255,248,230,.85); border: 2.5px solid var(--line); font-size: 24px; }
+.parade-track .slot i { font-style: normal; visibility: hidden; }
+.parade-track .slot.show i { visibility: visible; }
+.parade-track .slot.dim i { visibility: hidden; }
+.parade-track .slot.now { background: #ffe14f; transform: translateY(-4px); }
+.parade-track .slot.ok { background: #a5e07f; } .parade-track .slot.ok i { visibility: visible; }
+.parade-track .slot.bad { background: #ff8a7a; } .parade-track .slot.bad i { visibility: visible; }
+.parade-phase { position: absolute; left: 50%; top: 140px; transform: translateX(-50%); font-size: 22px; font-weight: var(--weight); color: #fff; text-shadow: 2px 2px 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
+.parade-phase.mine { color: #ffe14f; }
+.parade-keys { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); display: flex; gap: 8px; }
+.parade-keys div { white-space: nowrap; background: var(--panel); border: 2.5px solid var(--line); padding: 4px 10px; font-weight: var(--weight); font-size: 14px; }
+.parade-keys b { background: var(--ink); color: #fff; padding: 0 5px; margin-right: 4px; }
+.parade-keys small { font-weight: 400; font-size: 11px; opacity: .75; }
+.parade-cam-btn { position: absolute; right: 14px; top: 66px; pointer-events: auto; font-size: 13px; padding: 6px 10px; }
+.pose-cam { position: absolute; right: 14px; bottom: 44px; width: 256px; height: 192px; border: 2.5px solid var(--line); box-shadow: 0 4px 0 var(--shadow); image-rendering: auto; background: #222; }
+.parade-cam-err { position: absolute; left: 50%; top: 180px; transform: translateX(-50%); background: var(--panel); border: 2.5px solid var(--line); padding: 6px 12px; font-size: 14px; font-weight: var(--weight); }
+@media (max-width: 760px) { .pose-cam { width: 128px; height: 96px; bottom: 100px; } }
+
+/* ---------- 김포공항 비행기 ---------- */
+.flight-route { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: rgba(255,248,230,.9); border: 2.5px solid var(--line); padding: 4px 10px; font-size: 14px; }
+.flight-route .bar { position: relative; width: min(46vw, 320px); height: 10px; background: #cfe3f0; border: 2px solid var(--line); }
+.flight-route .bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #2f7fd8; }
+.flight-route .bar span { position: absolute; top: 50%; left: 0; transform: translate(-50%, -55%); font-size: 18px; }
+.flight-msg { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); background: var(--panel); border: 2.5px solid var(--line); box-shadow: 0 4px 0 var(--shadow); padding: 14px 22px; font-size: clamp(18px, 3vw, 28px); font-weight: var(--weight); white-space: nowrap; animation: popC .35s ease-out; }
+@keyframes popC { from { transform: translate(-50%, -50%) scale(.6); } }
+.flight-msg.ok { color: #2f6fd8; }
+.flight-msg.bad { color: #c0302a; }
+
+/* ---------- 성수동 스트리트 스냅 ---------- */
+.fashion-mission { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); background: var(--panel); border: 2.5px solid var(--line); box-shadow: 0 4px 0 var(--shadow); padding: 6px 14px 8px; text-align: center; }
+.fashion-mission small { display: block; font-size: 12px; margin-bottom: 4px; }
+.fashion-mission div { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: 20px; font-weight: var(--weight); white-space: nowrap; }
+.fashion-mission .chip { display: inline-flex; align-items: center; gap: 6px; }
+.fashion-mission .chip i { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--line); }
+.fashion-mission.pop { animation: pop .3s ease-out; }
+.fashion-flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.fashion-flash.on { animation: snapFlash .35s ease-out; }
+@keyframes snapFlash { from { opacity: .85; } to { opacity: 0; } }
+#miniOverlay:has(.pose-cam) .kart-speed { bottom: 250px; } /* 손 미리보기 위로 */
+
+/* ---------- 시작할 때 조작 고르기 ---------- */
+.ctrl-pick { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); text-align: center; pointer-events: auto; max-width: calc(100vw - 32px); }
+.ctrl-pick h3, .duck-pick .ctrl-h { margin: 0 0 12px; font-size: 20px; }
+.duck-pick .ctrl-h { margin-top: 16px; }
+.ctrl-pick p { margin: 12px 0 0; font-size: 12px; }
+.ctrl-pick .btn small, .ctrl-row .btn small { display: block; font-size: 11px; font-weight: 400; margin-top: 4px; }
+.ctrl-pick .btn-row, .ctrl-row { flex-wrap: wrap; justify-content: center; }
+
+/* ---------- 팔각정 망원경 ---------- */
+.tour-cap { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 20; text-align: center; min-width: min(420px, calc(100vw - 32px)); max-width: calc(100vw - 32px); animation: pop .3s ease-out; }
+.tour-cap b { display: block; font-size: 20px; margin-bottom: 4px; }
+.tour-cap span { font-size: 13px; }
+.tour-skip { position: fixed; right: 16px; bottom: 16px; z-index: 20; color: #fff; font-size: 12px; text-shadow: 0 4px 0 var(--shadow); }
+
+/* ---------- 택시 (데모) ---------- */
+#cabPanel { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(520px, calc(100vw - 32px)); pointer-events: auto; text-align: center; }
+#cabPanel h2 { margin: 0 0 4px; font-size: 22px; }
+#cabSearch { width: 100%; font-size: 16px; padding: 8px 10px; border: 2.5px solid var(--line); background: var(--panel); margin-bottom: 8px; }
+.cab-list { max-height: min(46vh, 340px); overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; text-align: left; }
+.cab-row { display: flex; align-items: center; gap: 8px; width: 100%; font-family: inherit; font-size: 14px; color: var(--ink); background: var(--panel); border: 2px solid var(--line); padding: 6px 8px; cursor: pointer; }
+.cab-row b { flex: 1; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cab-row span { font-size: 11px; color: #8a5a35; white-space: nowrap; }
+.cab-row strong { min-width: 34px; text-align: right; }
+.cab-row em { font-style: normal; font-size: 10px; font-weight: var(--weight); color: #fff; padding: 1px 5px; background: #8a5a35; white-space: nowrap; }
+.cab-row em.cat-명소 { background: #2f7fd8; } .cab-row em.cat-놀이 { background: #e8413a; } .cab-row em.cat-지하철 { background: #33a23d; } .cab-row em.cat-수상택시 { background: #f28c28; }
+.cab-row:hover:not(:disabled), .cab-row.sel:not(:disabled) { background: #ffe14f; }
+.cab-row.sel { outline: 3px solid #f2b05a; }
+.cab-row:disabled { opacity: .5; cursor: default; }
+.cab-empty { font-size: 13px; margin: 12px 0; }
+/* 택시 이동 화면 (지하철 화면을 노란 택시로) */
+#travel.cab .travel-tunnel { background: repeating-linear-gradient(90deg, #4a4f58 0 40px, #ffffff 40px 60px, #4a4f58 60px 100px) 0 50% / 100px 4px no-repeat, #4a4f58; animation: road .3s linear infinite; }
+#travel.cab .travel-train i:not(:first-child) { display: none; }
+#travel.cab .travel-train i { width: 96px; height: 40px; background: #ffd23f; box-shadow: inset 0 -10px 0 #3a3f4a, inset 0 8px 0 #9fd6f2; }
+@keyframes road { to { background-position: -100px 50%, 0 0; } }
+
+/* ---------- 홍대 인형뽑기 ---------- */
+.claw-timer { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); font-size: 30px; font-weight: var(--weight); color: #fff; text-shadow: 3px 3px 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); }
+.claw-timer.hurry { color: #ff7b6b; animation: bob .4s ease-out infinite; }
+
+/* ---------- 잠실 홈런 더비 ---------- */
+.hr-info { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); background: rgba(255,248,230,.92); border: 2.5px solid var(--line); padding: 4px 12px; font-size: 15px; white-space: nowrap; }
+.hr-info b { font-size: 18px; }
+.hr-info span { color: #c0302a; font-weight: var(--weight); }
+
+/* ---------- 63빌딩 무한의 계단 ---------- */
+.st-floor { position: absolute; left: 50%; top: 78px; transform: translateX(-50%); font-size: 22px; font-weight: var(--weight); color: #fff; text-shadow: 3px 3px 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink); white-space: nowrap; }
+.st-floor b { font-size: 44px; color: #ffe14f; }
+.st-floor small { font-size: 16px; }
+.st-energy { position: absolute; left: 50%; top: 138px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; font-weight: var(--weight); color: #fff; text-shadow: 2px 2px 0 var(--ink); }
+.st-energy div { width: min(320px, 60vw); height: 14px; background: #3a2410; border: 2.5px solid var(--line); }
+.st-energy i { display: block; height: 100%; width: 100%; background: #6fdc4a; }
+.st-energy.low i { background: #ff7b6b; animation: bob .3s ease-out infinite; }
+.st-keys { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); display: flex; gap: 14px; }
+.st-keys div { background: var(--panel); border: 2.5px solid var(--line); padding: 6px 12px; font-weight: var(--weight); font-size: 15px; white-space: nowrap; }
+.st-keys div.up { background: #c8f2a6; }
+.st-keys b { background: var(--ink); color: #fff; padding: 0 5px; margin-right: 4px; font-size: 12px; }
+
+/* ---------- 예술의전당 지휘자 ---------- */
+.cd-section { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); text-align: center; color: #fff; text-shadow: 2px 2px 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink); white-space: nowrap; }
+.cd-section b { display: block; font-size: 30px; color: #ffe14f; }
+.cd-section b small { font-size: 16px; color: #fff; }
+.cd-section span { font-size: 15px; }
+.cd-section.pop { animation: pop .35s ease-out; }
+.cd-meters { position: absolute; left: 14px; bottom: 44px; width: min(300px, calc(100vw - 300px)); min-width: 200px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.cd-row { display: flex; align-items: center; gap: 8px; }
+.cd-row span { width: 38px; font-weight: var(--weight); }
+.cd-row em { width: 52px; font-style: normal; font-weight: var(--weight); text-align: right; }
+.cd-bar { position: relative; flex: 1; height: 14px; background: #e9d9b8; border: 2px solid var(--line); }
+.cd-bar .zone { position: absolute; top: 0; bottom: 0; background: #8fd16a; }
+.cd-bar .zone.any { background: #cfe8b8; }
+.cd-bar i { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; background: #e8413a; border: 1px solid var(--ink); transition: left .1s; }
+
+/* ---------- 강남 K-팝 댄스 ---------- */
+.parade-track.kpop-track .slot { background: rgba(40,16,54,.88); border-color: #ff6ec7; box-shadow: 0 0 0 2px var(--ink); }
+.parade-track.kpop-track .slot.now { background: #ff6ec7; }
+.parade-track.kpop-track .slot.ok { background: #a5e07f; }
+.parade-track.kpop-track .slot.bad { background: #ff8a7a; }
+/* K-팝 포즈 챌린지: 지금 잡을 포즈 카드 + 남은 시간 막대, 몸으로 할 때 지금 인식된 포즈 표시 */
+.kp-card { position: absolute; left: 50%; top: 78px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--panel); border: 2.5px solid var(--line); box-shadow: 0 4px 0 var(--shadow); padding: 6px 18px 8px; min-width: 200px; }
+.kp-card i { font-style: normal; font-size: 40px; line-height: 1.1; }
+.kp-card b { font-size: 20px; }
+.kp-card.pop { animation: pop .3s ease-out; }
+.kp-card.ok { background: #b8f0a0; } .kp-card.bad { background: #ff9a8a; }
+.kp-bar { display: block; width: 100%; height: 8px; background: #e2d6c0; border: 2px solid var(--line); margin-top: 4px; }
+.kp-bar span { display: block; height: 100%; width: 100%; background: #ff6ec7; }
+.kp-keys div.on { background: #ffe14f; transform: translateY(-3px); }
+.kp-phase { top: 200px; }
+.kp-card small { font-size: 12px; }
+
+/* ---------- 미니게임 설명 화면 (들어가면 먼저) ---------- */
+.game-intro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(600px, calc(100vw - 32px)); max-height: calc(100vh - 120px); overflow-y: auto; pointer-events: auto; text-align: center; }
+.game-intro h2 { margin: 0 0 6px; font-size: 24px; }
+.gi-chips { display: flex; gap: 6px; justify-content: center; margin-bottom: 8px; }
+.gi-chips span { font-size: 12px; background: var(--panel); border: 2px solid var(--line); padding: 1px 8px; }
+.gi-goal { margin: 0 0 8px; font-size: 16px; font-weight: var(--weight); line-height: 1.5; }
+.gi-tips { margin: 0 auto 10px; padding: 0 0 0 18px; text-align: left; font-size: 13px; line-height: 1.6; max-width: 480px; }
+.gi-ctrl { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; text-align: left; }
+.gi-ctrl div { display: flex; gap: 8px; align-items: baseline; background: var(--panel); border: 2px solid var(--line); padding: 6px 10px; font-size: 12px; line-height: 1.5; }
+.gi-ctrl b { white-space: nowrap; font-size: 13px; }
+.game-intro .btn-row { flex-wrap: wrap; }
+.game-intro .btn small { display: block; font-size: 11px; font-weight: 400; margin-top: 3px; }
+.gi-foot { margin: 10px 0 0; font-size: 11px; opacity: .8; }
+/* ============================================================
+   두근두근 서울섬 — 원래 서울섬의 크림색 알약 · 말풍선 · Jua 글씨
+   낮: Jua / 노을(해 질 녘~새벽): Gowun Batang + 보랏빛 (body.dusk)
+   ============================================================ */
+:root {
+  --bg: #CFEAF6; --panel: #FFFAEA; --fg: #6B4F2E; --sub: #8A6B45; --shadow: rgba(107,79,46,.18);
+  --line: rgba(107,79,46,.28); --ink: #6B4F2E;
+  --font: 'Jua', sans-serif; --weight: 400; --accent: #F2A73B; --accentFg: #FFFFFF; --areaBg: #DCF1FA; --areaFg: #23607A;
+  --bubble: 46% 54% 50% 50% / 60% 60% 40% 40%;
+  --green: #7FCB98; --greenDk: #5FAE7A; --pink: #FF8FA3; --chip: #FFF3D6;
+  --mm-sea: #8FD8E8; --mm-me: #F2A73B;
+}
+body.dusk {
+  --bg: #F2B59A; --panel: #FBF3E4; --fg: #3A3150; --sub: #6E5F96; --shadow: rgba(30,22,48,.35);
+  --line: rgba(58,49,80,.3); --ink: #3A3150;
+  --font: 'Gowun Batang', serif; --weight: 700; --accent: #3A3150; --accentFg: #FFD27A; --areaBg: #3A3150; --areaFg: #FFD27A;
+  --bubble: 26px; --green: #8FBE72; --greenDk: #6E9E58; --chip: #F6E6CC;
+  --mm-sea: #9C93D6; --mm-me: #FF8FA3;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--font); -webkit-user-select: none; user-select: none; touch-action: none; }
+button, input { font-family: inherit; color: inherit; }
+#view { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; cursor: grab; outline: none; }
+#view.grabbing { cursor: grabbing; }
+#fade { position: fixed; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity .35s ease; z-index: 50; }
+#fade.on { opacity: 1; pointer-events: all; }
+.hidden { display: none !important; }
+#loading { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; font-size: 24px; background: var(--bg); }
+
+/* ---------- 공통 판 · 버튼 ---------- */
+.panel { background: var(--panel); border-radius: 28px; box-shadow: 0 6px 0 var(--shadow); padding: 22px 26px; }
+.panel.small { border-radius: 20px; padding: 10px 16px; box-shadow: 0 4px 0 var(--shadow); }
+.pill { display: inline-flex; align-items: center; gap: 8px; background: var(--panel); border-radius: 999px; box-shadow: 0 4px 0 var(--shadow); font-weight: var(--weight); white-space: nowrap; }
+.btn { font-size: 16px; font-weight: var(--weight); color: var(--fg); background: var(--chip); border: none; border-radius: 999px; padding: 9px 20px; cursor: pointer; box-shadow: 0 4px 0 var(--shadow); transition: transform .08s; }
+.btn:hover { filter: brightness(1.04); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--shadow); }
+.btn.big { font-size: 19px; padding: 12px 26px; }
+.btn.green { background: var(--green); color: #fff; }
+.btn:focus-visible, .chip:focus-visible, .choice:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn-row { display: flex; gap: 12px; justify-content: center; }
+.screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10; }
+.coin { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #F7C544; box-shadow: inset 0 0 0 2px #D9A23B; flex: none; }
+
+/* ---------- 주민 등록 ---------- */
+#makeScreen { justify-content: flex-start; padding-left: max(16px, 5vw); }
+.make-panel { width: min(470px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+.title { margin: 0; font-size: 34px; font-weight: var(--weight); color: var(--pink); text-shadow: 0 3px 0 var(--shadow); }
+.lead { margin: 4px 0 14px; color: var(--sub); }
+.make-body { display: flex; gap: 14px; }
+.make-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.make-preview canvas { width: 104px; height: 104px; border-radius: 50%; background: var(--areaBg); }
+.make-preview small { font-size: 11px; color: var(--sub); text-align: center; width: 104px; }
+.make-opts { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.opt { display: flex; align-items: center; gap: 8px; }
+.opt > span { width: 40px; flex: none; font-size: 14px; color: var(--sub); }
+.opt input { flex: 1; min-width: 0; font-size: 17px; padding: 8px 14px; border: none; border-radius: 999px; background: var(--chip); outline: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { border: none; background: var(--chip); border-radius: 999px; padding: 4px 10px; font-size: 14px; cursor: pointer; min-height: 30px; box-shadow: 0 2px 0 var(--shadow); }
+.chip i { display: block; width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0,0,0,.08); }
+.chip:has(i) { padding: 5px; }
+.chip.on { background: var(--fg); color: var(--panel); }
+.make-panel .btn-row { margin-top: 16px; }
+
+/* ---------- 월드 HUD (원래 서울섬 배치) ---------- */
+#hud, #miniHud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+.hud-tl { position: absolute; left: 20px; top: 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+#zoneP { padding: 8px 20px 8px 10px; font-size: 20px; }
+#area { background: var(--areaBg); color: var(--areaFg); border-radius: 999px; padding: 3px 12px; font-size: 15px; }
+#bell { padding: 6px 16px; font-size: 17px; }
+.btn-pill { border: none; padding: 6px 16px; font-size: 16px; cursor: pointer; pointer-events: auto; }
+.btn-pill small { font-size: 11px; opacity: .6; }
+.mapWrap { position: absolute; right: 16px; top: 14px; border-radius: 50%; background: var(--panel); padding: 6px; box-shadow: 0 4px 0 var(--shadow); pointer-events: auto; }
+.mapWrap canvas { display: block; border-radius: 50%; cursor: pointer; }
+.mapWrap.big { right: 50%; top: 50%; transform: translate(50%, -50%); border-radius: 28px; padding: 10px; z-index: 5; }
+.mapWrap.big canvas { border-radius: 20px; cursor: grab; }
+#clock { position: absolute; left: 20px; bottom: 18px; background: var(--panel); border-radius: 26px; padding: 10px 22px 12px; box-shadow: 0 4px 0 var(--shadow); display: flex; flex-direction: column; }
+#clock small { font-size: 14px; font-weight: var(--weight); color: var(--sub); }
+#clock b { font-size: 38px; line-height: 1.08; font-weight: var(--weight); }
+#clock em { font-style: normal; }
+#clock b span { font-size: 17px; }
+#help { position: absolute; right: 16px; bottom: 18px; background: var(--panel); opacity: .95; border-radius: 18px; padding: 10px 16px; font-family: 'Gowun Dodum', sans-serif; font-size: 14px; line-height: 1.9; box-shadow: 0 4px 0 var(--shadow); display: flex; flex-direction: column; }
+#help b { font-weight: 400; background: var(--fg); color: var(--panel); border-radius: 6px; padding: 1px 7px; margin-left: 4px; }
+#help b:first-child { margin-left: 0; }
+#pad { position: absolute; right: 24px; bottom: 132px; width: 156px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; pointer-events: auto; }
+#pad button { height: 48px; border: none; border-radius: 14px; background: var(--panel); color: var(--fg); box-shadow: 0 4px 0 var(--shadow); cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: none; }
+@media (hover: hover) and (pointer: fine) { #pad { display: none; } }
+#hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--panel); border-radius: 24px; padding: 18px 28px; font-size: 20px; box-shadow: 0 6px 0 var(--shadow); text-align: center; line-height: 1.6; }
+#prompt { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); pointer-events: auto; font-size: 18px; font-weight: var(--weight); background: var(--panel); border: none; border-radius: 999px; padding: 6px 20px 6px 8px; min-height: 46px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 0 var(--shadow); cursor: pointer; white-space: nowrap; max-width: calc(100vw - 32px); }
+#prompt .k { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accentFg); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+#dialog { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); width: min(640px, calc(100vw - 32px)); pointer-events: auto; }
+#dialogName { position: absolute; top: -14px; left: 50px; z-index: 1; color: #FFFFFF; font-size: 20px; font-weight: var(--weight); padding: 6px 20px; border-radius: 999px; transform: rotate(-4deg); box-shadow: 0 3px 0 var(--shadow); }
+#dialogText { display: block; width: 100%; text-align: left; font-size: 21px; font-weight: var(--weight); line-height: 1.55; background: var(--panel); border: none; border-radius: var(--bubble); padding: 32px 60px 28px; min-height: 120px; box-shadow: 0 6px 0 var(--shadow); cursor: pointer; white-space: pre-line; }
+#dialogChoice { position: absolute; right: 30px; top: -58px; display: flex; flex-direction: column; gap: 6px; }
+.choice { border: none; background: var(--panel); border-radius: 999px; padding: 8px 22px 8px 30px; font-size: 18px; font-weight: var(--weight); cursor: pointer; box-shadow: 0 4px 0 var(--shadow); position: relative; text-align: left; }
+.choice.on::before { content: ''; position: absolute; left: 12px; top: 50%; margin-top: -5px; border: 5px solid transparent; border-left: 8px solid var(--accent); }
+.choice.on { background: var(--chip); }
+#dialogChoice { top: auto; bottom: calc(100% + 18px); }
+#toast { position: fixed; left: 50%; top: 78px; transform: translateX(-50%); z-index: 40; background: var(--fg); color: var(--panel); border-radius: 999px; padding: 8px 22px; font-size: 18px; white-space: nowrap; max-width: calc(100vw - 32px); overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) { #help { display: none; } #zoneP { font-size: 16px; } #clock b { font-size: 30px; } #dialogText { padding: 28px 26px 22px; font-size: 18px; } }
+
+/* ---------- 미니게임 공통 ---------- */
+#quitMini { position: absolute; right: 14px; top: 14px; pointer-events: auto; }
+.mini-top { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); display: flex; gap: 16px; align-items: center; background: var(--panel); border-radius: 999px; padding: 8px 20px; box-shadow: 0 4px 0 var(--shadow); max-width: calc(100vw - 150px); }
+.mini-title { font-size: 18px; }
+.hearts { display: flex; gap: 4px; }
+.heart { width: 20px; height: 18px; background: var(--pink); clip-path: path('M10 18 C 2 12 0 8 0 5 A 5 5 0 0 1 10 3 A 5 5 0 0 1 20 5 C 20 8 18 12 10 18 Z'); }
+.heart.off { background: var(--line); }
+.timer { width: 150px; height: 14px; border-radius: 999px; background: var(--chip); overflow: hidden; box-shadow: inset 0 0 0 2px var(--line); }
+#timerFill { height: 100%; width: 100%; background: var(--green); border-radius: 999px; }
+.score { font-size: 15px; }
+.score b { font-size: 21px; font-weight: var(--weight); }
+#miniCombo { color: var(--accent); }
+.mini-time { font-size: 13px; color: var(--sub); }
+.mini-top > * { white-space: nowrap; }
+.hud-hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); color: var(--fg); background: var(--panel); border-radius: 999px; padding: 5px 16px; font-size: 13px; box-shadow: 0 3px 0 var(--shadow); max-width: calc(100vw - 32px); text-align: center; }
+.hud-hint:empty { display: none; }
+#countdown { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 30; pointer-events: none; font-size: 110px; color: #FFD166; text-shadow: 0 6px 0 var(--fg), 0 0 0 var(--fg); -webkit-text-stroke: 6px var(--fg); paint-order: stroke fill; }
+.result-panel { text-align: center; min-width: min(360px, calc(100vw - 32px)); }
+.result-panel h2 { margin: 0 0 8px; font-size: 26px; font-weight: var(--weight); }
+.result-rows { font-size: 16px; line-height: 2; margin: 6px 0 16px; }
+.result-rows b { font-size: 20px; font-weight: var(--weight); }
+.result-rows .earn { display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--chip); border-radius: 999px; margin-top: 6px; }
+.result-rows #resultRows div { display: flex; justify-content: space-between; gap: 24px; }
+#rBest { color: var(--accent); font-size: 13px; }
+#floaters { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+.floater { position: absolute; transform: translate(-50%, -50%); font-size: 20px; color: #fff; -webkit-text-stroke: 4px var(--fg); paint-order: stroke fill; animation: floatUp .9s ease-out forwards; }
+.floater.bad { color: #FF8F8F; }
+.floater.gold { color: #FFD166; font-size: 24px; }
+@keyframes floatUp { to { transform: translate(-50%, -160%); opacity: 0; } }
+.shake { animation: shake .3s ease-out; }
+@keyframes shake { 25% { transform: translate(6px, -3px); } 50% { transform: translate(-6px, 3px); } 75% { transform: translate(4px, 2px); } }
+@keyframes bob { 50% { transform: translateY(3px); } }
+@keyframes pop { from { transform: translateX(-50%) scale(.6); } }
+#miniOverlay { position: absolute; inset: 0; pointer-events: none; }
+.fish-msg, .catch-card, .feed-bubble, .guide-q, .parade-keys div, .flight-route, .flight-msg, .fashion-mission, .hr-info, .st-keys div, .kp-card,
+.lock-card, .reel, .gi-chips span, .gi-ctrl div, .cab-row, #cabSearch, .parade-track .slot, .parade-cam-err, .pose-cam, .kart-map, .guide-map, .kara-hw, .tour-cap { border-radius: 16px !important; }
+.parade-track .slot { border-radius: 14px !important; }
+.power-bar div, .reel-track, .reel-prog, .catch-track, .st-energy div, .cd-bar, .kp-bar, .guide-q .pat, .flight-route .bar { border-radius: 999px; overflow: hidden; }
+.feed-bar .btn b, .kara-pick .btn b, .guide-pad .btn b, .parade-keys b, .st-keys b { background: var(--fg); color: var(--panel); border-radius: 6px; }
+.tour-cap { background: var(--panel); box-shadow: 0 6px 0 var(--shadow); padding: 12px 22px; }
+.tour-skip { color: var(--fg) !important; text-shadow: none !important; background: var(--panel); border-radius: 999px; padding: 4px 12px; }
+.travel-text { text-shadow: none; font-weight: var(--weight); }
+#travel { background: #3A3150; }
+.line2-badge { border: none !important; }
+#subwayPanel .loop-line { border-color: #7FCB98; box-shadow: none; }
+.subway-loop .stop i { border-color: #7FCB98 !important; box-shadow: none !important; }
+.subway-loop .stop b, .subway-loop .stop small, .subway-loop .stop em { border: none !important; border-radius: 999px; background: var(--chip); }
+#cabSearch { border: none !important; background: var(--chip) !important; outline: none; border-radius: 999px !important; padding: 9px 16px !important; }
+.cab-row { border: none !important; background: var(--chip); }
+.cab-row em { border-radius: 999px; }
+.cab-row:hover:not(:disabled), .cab-row.sel:not(:disabled) { background: #FFE7A0; outline: none; }

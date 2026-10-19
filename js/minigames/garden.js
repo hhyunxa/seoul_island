@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox } from '../toon.js';
 import { box } from '../world.js';
 import { signTexture } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -71,7 +72,7 @@ export class GardenGame extends MiniGame {
     // 온실 바닥 + 유리벽 (흰 창틀)
     this.tileGround(24, 12, (x, y) => (y >= 6 ? 'path' : 'grass'), 41).position.z = -1;
     const glass = new THREE.MeshBasicMaterial({ color: '#d8f2fb', transparent: true, opacity: 0.55, depthWrite: false });
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(16, 7, 0.05), glass); wall.position.set(0, 3.5, -3.2); s.add(wall);
+    const wall = new THREE.Mesh(rbox(16, 7, 0.05), glass); wall.position.set(0, 3.5, -3.2); s.add(wall);
     for (let i = 0; i <= 8; i++) box(0.1, 7, 0.1, '#ffffff', -8 + i * 2, 3.5, -3.15, s);
     for (const y of [2.2, 4.4, 6.6]) box(16, 0.08, 0.1, '#ffffff', 0, y, -3.15, s);
     // 온실 안 큰 열대 식물들 (뒤쪽)
@@ -92,12 +93,12 @@ export class GardenGame extends MiniGame {
       box(0.62, 0.04, 0.52, '#5a3a22', 0, SOIL_Y - 0.03, 0, g);
       // 물 게이지: 틀 + 초록 칸 + 파란 물
       box(0.2, GH + 0.08, 0.08, '#3a2410', 0.6, SOIL_Y + GH / 2, 0.1, g);
-      const band = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1, 0.04), new THREE.MeshBasicMaterial({ color: '#6fdc4a', transparent: true, opacity: 0.75 }));
+      const band = new THREE.Mesh(rbox(0.22, 1, 0.04), new THREE.MeshBasicMaterial({ color: '#6fdc4a', transparent: true, opacity: 0.75 }));
       band.position.set(0.6, 0, 0.16); g.add(band);
       const fillMat = new THREE.MeshBasicMaterial({ color: '#3fa8f0' });
-      const fill = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1, 0.05), fillMat); fill.position.set(0.6, 0, 0.18); g.add(fill);
+      const fill = new THREE.Mesh(rbox(0.14, 1, 0.05), fillMat); fill.position.set(0.6, 0, 0.18); g.add(fill);
       // 이름표 (선반 앞)
-      const label = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.3, 0.04), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+      const label = new THREE.Mesh(rbox(1.3, 0.3, 0.04), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
       label.position.set(0, SHELF_Y - 0.18, 0.57); g.add(label);
       this.pots.push({ x, g, band, fill, fillMat, label, plant: null });
     }

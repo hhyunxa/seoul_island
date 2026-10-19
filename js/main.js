@@ -1,7 +1,5 @@
-import './style.css';
 import * as THREE from 'three';
-import { SkinEditor } from './editor.js';
-import { Avatar, drawPortrait, validSkin, farmerSkin } from './character.js';
+import { Avatar, drawPortrait, validLook, defaultLook, TYPES, SKIN_TONES, HAIR_COLORS, FUR_COLORS, CLOTH_COLORS } from './character.js';
 import { World } from './world.js';
 import { DayNight } from './daynight.js';
 import { buildSubway, STATIONS, LINE2 } from './subway.js';
@@ -9,34 +7,38 @@ import { buildPiers, WaterTaxi } from './watertaxi.js';
 import { GAMES } from './minigames/index.js';
 import { sfx } from './sfx.js';
 import { Tour } from './tour.js';
+import { U, WORLD_CURVE } from './toon.js';
 
 const $ = (id) => document.getElementById(id);
-const PIX = 3; // 화면을 1/3 해상도로 그린 뒤 확대 → 도트 느낌
 
 // ---------- 저장 (브라우저 localStorage, 실패해도 게임은 동작) ----------
-const SAVE_KEY = 'dot-island-save-v2';
-function loadSave() {
-  try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; }
-}
-const save = Object.assign({ name: '', skin: null, coins: 0, best: {}, dex: {} }, loadSave());
-if (save.skin && !validSkin(save.skin)) save.skin = null;
+const SAVE_KEY = 'seoul-island-save-v1';
+function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch { return {}; } }
+const save = Object.assign({ name: '', look: null, coins: 0, best: {}, dex: {}, stamps: {} }, loadSave());
+if (!validLook(save.look)) save.look = defaultLook();
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch { /* 무시 */ } }
 
 // ---------- 렌더러 ----------
-const renderer = new THREE.WebGLRenderer({ canvas: $('view'), antialias: false });
-renderer.setPixelRatio(1);
-renderer.shadowMap.enabled = true;
+const canvas = $('view');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); }
+catch { $('loading').textContent = '이 브라우저에서는 3D(WebGL)를 켤 수 없어요'; throw new Error('WebGL'); }
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; // 미니게임 무대만 그림자를 씀 (월드는 동그란 그림자)
 renderer.shadowMap.type = THREE.PCFShadowMap;
-const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 240);
+const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 400);
 
-await document.fonts.load('700 16px Galmuri11').catch(() => {});
+await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]);
+await document.fonts.load('20px Jua').catch(() => {});
+await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30))); // "불러오는 중"이 먼저 보이게
 const world = new World();
-const dayNight = new DayNight(world); // 시계에 맞춰 하늘·빛이 바뀜
-buildSubway(world); // 2호선 주요 역 입구
-buildPiers(world);  // 한강 수상택시 선착장
+const dayNight = new DayNight(world);
+buildSubway(world);
+buildPiers(world);
 const taxi = new WaterTaxi(world);
-world.finishTrees(); // 표지판·시작 지점 주변 나무 정리 후 나무 그리기
-// 미니게임은 처음 들어갈 때 만들고 재사용
+world.finishTrees();
+$('loading').classList.add('hidden');
+
 const games = {};
 let mini = null, miniEntry = null;
 function getGame(id) {
@@ -44,57 +46,46 @@ function getGame(id) {
   return games[id];
 }
 
-let mode = 'draw';
-let avatar = null;   // 월드 속 내 캐릭터 (Avatar)
-let player = null;   // avatar.root
-let skin = save.skin || farmerSkin();
+let mode = 'make';
+let avatar = null, player = null;
 let vy = 0, airborne = false, yaw = 0;
 const keys = new Set();
-let zoom = 1;
-let gameMinutes = 6 * 60;
-let dialog = null;
-let subway = null; // 지하철 역 고르기 창이 열려 있으면 { from }
-let nearest = null;
-let stepT = 0;
-let tour = null;
-let cab = null;    // 택시 부르기 창이 열려 있으면 { list, sel }   // 팔각정 망원경으로 서울 둘러보는 중이면 Tour
+let gameMinutes = 7 * 60;
+let dialog = null, subway = null, cab = null, tour = null;
+let nearest = null, goal = null, stepT = 0, hint = true;
 
-// ---------- 에디터 ----------
-const editor = new SkinEditor({
-  view: $('skinView'), faceCanvas: $('faceCanvas'), paletteEl: $('palette'), customColorEl: $('customColor'),
-  faceLabel: $('faceLabel'), partSel: $('partSel'), faceBtns: $('faceBtns'),
-});
-editor.load(skin);
+// ---------- 주민 등록 (꾸미기) ----------
+const look = { ...save.look };
+function chips(el, list, key, render = (v) => `<i style="background:${v}"></i>`) {
+  el.innerHTML = list.map((v) => { const val = typeof v === 'string' ? v : v.id; return `<button type="button" class="chip${look[key] === val ? ' on' : ''}" data-v="${val}" title="${v.label || val}">${render(v)}</button>`; }).join('');
+  el.onclick = (e) => { const b = e.target.closest('[data-v]'); if (!b) return; look[key] = b.dataset.v; sfx.click(); refreshMake(); };
+}
+function refreshMake() {
+  chips($('optType'), TYPES, 'type', (t) => t.label);
+  chips($('optSkin'), SKIN_TONES, 'skin');
+  chips($('optHair'), HAIR_COLORS, 'hair');
+  chips($('optFur'), FUR_COLORS, 'fur');
+  chips($('optShirt'), CLOTH_COLORS, 'shirt');
+  chips($('optPants'), CLOTH_COLORS, 'pants');
+  const human = look.type === 'human';
+  $('rowSkin').classList.toggle('hidden', !human); $('rowHair').classList.toggle('hidden', !human); $('rowFur').classList.toggle('hidden', human);
+  look.hat = human;
+  drawPortrait(look, $('makeFace'));
+  rebuildPlayer();
+}
 $('nameInput').value = save.name || '';
-document.querySelectorAll('.tool[data-tool]').forEach((b) => (b.onclick = () => { editor.setTool(b.dataset.tool); sfx.click(); }));
-document.querySelectorAll('[data-template]').forEach((b) => (b.onclick = () => { editor.loadTemplate(b.dataset.template); sfx.click(); }));
-document.querySelectorAll('[data-view]').forEach((b) => (b.onclick = () => { editor.setView(b.dataset.view); sfx.click(); }));
-$('mirrorBtn').onclick = () => { editor.mirror = !editor.mirror; $('mirrorBtn').classList.toggle('active', editor.mirror); sfx.click(); };
-$('undoBtn').onclick = () => { editor.doUndo(); sfx.click(); };
-$('walkBtn').onclick = () => {
-  editor.walk = !editor.walk; sfx.click();
-  $('walkBtn').classList.toggle('active', editor.walk);
-  $('walkBtn').textContent = editor.walk ? '■ 멈추기' : '▶ 걸어보기';
+$('enterWorld').onclick = () => {
+  sfx.unlock(); sfx.open();
+  save.look = { ...look }; save.name = $('nameInput').value.trim() || '주민';
+  persist();
+  transition(() => { setMode('world'); resetView(); snapCamera(); setTimeout(() => toast(`${save.name}, 서울섬에 온 걸 환영해요!`), 500); });
 };
 
-$('toPreview').onclick = () => {
-  sfx.unlock();
-  skin = JSON.parse(JSON.stringify(editor.skin));
-  save.skin = skin;
-  save.name = $('nameInput').value.trim() || '모험가';
-  persist();
-  sfx.open();
-  transition(() => setMode('preview'));
-};
-$('backToDraw').onclick = () => { sfx.click(); transition(() => setMode('draw')); };
-$('enterWorld').onclick = () => { sfx.open(); transition(() => setMode('world')); };
 $('retryMini').onclick = () => { sfx.click(); $('resultScreen').classList.add('hidden'); mini.start(); };
 $('exitMini').onclick = () => { sfx.click(); backToIsland(); };
-// 게임 도중 나가기: 결과 처리(showResult)를 건너뛰므로 코인·기록·도감이 반영되지 않음
 $('quitMini').onclick = () => {
-  if (mode !== 'mini' || mini.state === 'done') return; // 이미 끝났거나 나가는 중
-  sfx.click();
-  mini.quit();
+  if (mode !== 'mini' || mini.state === 'done') return;
+  sfx.click(); mini.quit();
   toast('게임을 그만뒀어요. 이번 판 보상은 없어요');
   backToIsland();
 };
@@ -106,7 +97,6 @@ function backToIsland() {
   });
 }
 
-// ---------- 화면 전환 ----------
 function transition(fn) {
   const f = $('fade');
   f.classList.add('on');
@@ -114,109 +104,120 @@ function transition(fn) {
 }
 
 function rebuildPlayer() {
-  if (avatar) { world.scene.remove(player); avatar.dispose(); }
-  avatar = new Avatar(skin, { height: 1.7 });
+  const pos = player ? player.position.clone() : world.spawn.clone();
+  const ry = player ? player.rotation.y : 0;
+  if (avatar) avatar.dispose();
+  avatar = new Avatar(mode === 'make' ? look : save.look, { height: 1.7 });
   player = avatar.root;
-  player.position.copy(world.spawn);
-  player.rotation.y = 0; yaw = 0; vy = 0; airborne = false;
+  player.position.copy(pos); player.rotation.y = ry;
   world.scene.add(player);
 }
 
 function setMode(m) {
   const prev = mode;
   mode = m;
-  $('drawScreen').classList.toggle('hidden', m !== 'draw');
-  $('previewScreen').classList.toggle('hidden', m !== 'preview');
+  $('makeScreen').classList.toggle('hidden', m !== 'make');
   $('hud').classList.toggle('hidden', m !== 'world');
   $('miniHud').classList.toggle('hidden', m !== 'mini');
   $('resultScreen').classList.add('hidden');
   $('countdown').classList.add('hidden');
   closeDialog();
-  if (m === 'draw') { if (player) player.visible = false; requestAnimationFrame(fitDraw); }
-  if (m === 'preview') {
-    rebuildPlayer();
-    $('pvName').textContent = save.name;
-  }
+  U.uCurve.value = m === 'mini' ? 0 : WORLD_CURVE;
+  if (m === 'make') { player?.position.copy(world.spawn); refreshMake(); }
   if (m === 'world') {
-    if (!player || prev === 'preview') rebuildPlayer();
+    if (prev === 'make') rebuildPlayer();
     player.visible = true;
-    $('hudName').textContent = save.name;
-    drawPortrait(skin, $('portrait'));
-    $('hudCoins').textContent = save.coins;
-    if (prev === 'preview') { resetView(); snapCamera(); setTimeout(() => toast(`${save.name}, 도트 서울에 온 걸 환영해요!`), 500); }
+    $('hudCoins').textContent = save.coins.toLocaleString();
   }
-  if (m === 'mini') {
-    mini.setPlayer(skin);
-    mini.start();
-  }
+  if (m === 'mini') { mini.setPlayer(save.look); mini.start(); }
   if (m !== 'mini') $('miniOverlay').innerHTML = '';
-  if (prev === 'mini' && m !== 'mini') mini?.leave?.(); // 카메라 등 정리
+  if (prev === 'mini' && m !== 'mini') mini?.leave?.();
 }
 
 // ---------- 입력 ----------
+const MOVE_KEYS = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   keys.add(e.code);
-  if (mode === 'draw') {
-    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); editor.doUndo(); }
-    else if (e.code === 'KeyB') editor.setTool('pen');
-    else if (e.code === 'KeyG') editor.setTool('fill');
-    else if (e.code === 'KeyP') editor.setTool('part');
-    else if (e.code === 'KeyI') editor.setTool('picker');
-    else if (e.code === 'KeyM') $('mirrorBtn').click();
-  } else if (mode === 'world' && tour) {
+  if (MOVE_KEYS.includes(e.code)) { goal = null; hideHint(); }
+  if (mode === 'world' && tour) {
     if (['Escape', 'KeyE', 'Enter', 'Space'].includes(e.code) && !e.repeat) { e.preventDefault(); tour.skip(); }
   } else if (mode === 'world' && subway) {
-    const m = /^(Digit|Numpad)([1-9])$/.exec(e.code);
-    if (m) { const b = $('subwayLoop').querySelector(`[data-key="${m[2]}"]`); if (b) b.click(); }
+    const mm = /^(Digit|Numpad)([1-9])$/.exec(e.code);
+    if (mm) { const b = $('subwayLoop').querySelector(`[data-key="${mm[2]}"]`); if (b) b.click(); }
     if (e.code === 'Escape') closeSubway();
   } else if (mode === 'world') {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+    if (dialog?.choice && dialog.shown >= dialog.lines[dialog.i].length && dialog.i === dialog.lines.length - 1) {
+      if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) { dialog.pick = 1 - dialog.pick; renderChoice(); return; }
+      if (e.code === 'Escape' || e.code === 'Digit2') { choose('no'); return; }
+      if (e.code === 'Digit1') { choose('yes'); return; }
+    }
     if (e.code === 'Space' && !e.repeat) { if (dialog) interact(); else if (!taxi.riding) jump(); }
     if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) interact();
     if (e.code === 'KeyR' && !e.repeat && !dialog) { resetView(); toast('시점을 처음대로 돌렸어요'); }
     if (e.code === 'KeyM' && !e.repeat) mmToggle();
     if (e.code === 'KeyT' && !e.repeat && !dialog) openCab();
-    if (e.code === 'Escape') { if (dialog) closeDialog(); else if (taxi.riding) toast('선착장에서 E를 눌러 내린 다음 나갈 수 있어요'); else transition(() => setMode('draw')); }
+    if (e.code === 'Escape') { if (dialog) closeDialog(); else if (mm2Big()) mmToggle(); else if (taxi.riding) toast('선착장에서 E를 눌러 내린 다음 나갈 수 있어요'); else transition(() => setMode('make')); }
   } else if (mode === 'mini') {
     if (['Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
     const resultOpen = !$('resultScreen').classList.contains('hidden');
     if (e.code === 'Enter' && resultOpen) $('exitMini').click();
     else if (e.code === 'Escape' && !resultOpen) $('quitMini').click();
-    else if (!e.repeat && !resultOpen && mini.state !== 'choose') mini.keyDown(e.code); // 조작 고르는 창의 1·2 키는 게임에 안 넘김
+    else if (!e.repeat && !resultOpen && mini.state !== 'choose') mini.keyDown(e.code);
   }
 });
 addEventListener('keyup', (e) => { keys.delete(e.code); if (mode === 'mini') mini.keyUp(e.code); });
 addEventListener('blur', () => keys.clear());
 addEventListener('wheel', (e) => {
-  if (e.target === mm) return; // 지도 위 휠은 지도 확대/축소
-  if (mode === 'world') zoom = THREE.MathUtils.clamp(zoom + Math.sign(e.deltaY) * 0.1, 0.4, 1.8);
-  if (mode === 'preview' && e.target === $('view')) zoom = THREE.MathUtils.clamp(zoom + Math.sign(e.deltaY) * 0.1, 0.7, 1.6);
+  if (e.target === mm) return;
+  if (mode === 'world' && e.target === canvas) cam.dist = THREE.MathUtils.clamp(cam.dist + e.deltaY * 0.01, 7, 28);
 }, { passive: true });
 addEventListener('pointermove', (e) => { if (mode === 'mini') mini.pointer(e, innerWidth, innerHeight); });
-$('view').addEventListener('pointerdown', (e) => { if (mode === 'mini' && e.button === 0) mini.pointerDown(e, innerWidth, innerHeight); });
+canvas.addEventListener('pointerdown', (e) => { if (mode === 'mini' && e.button === 0) mini.pointerDown(e, innerWidth, innerHeight); });
 addEventListener('pointerup', (e) => { if (mode === 'mini') mini.pointerUp(e, innerWidth, innerHeight); });
-$('dialog').onclick = () => interact();
+$('dialogText').onclick = () => { interact(); canvas.focus({ preventScroll: true }); };
+$('prompt').onclick = () => { interact(); canvas.focus({ preventScroll: true }); };
+$('dialogChoice').onclick = (e) => { const b = e.target.closest('[data-c]'); if (b) choose(b.dataset.c); };
+document.querySelectorAll('#pad button').forEach((b) => {
+  const k = b.dataset.k;
+  const on = (e) => { e.preventDefault(); keys.add(k); goal = null; hideHint(); };
+  const off = () => keys.delete(k);
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+});
+function hideHint() { if (hint) { hint = false; $('hint').classList.add('hidden'); } }
 
-// ---------- 대화창 ----------
+// ---------- 대화창 (원래 서울섬 말풍선 + 이름표) ----------
 function openDialog(it) {
-  dialog = { name: it.name, lines: it.lines, i: 0, shown: 0 };
+  dialog = { name: it.name || it.host?.name, lines: it.lines || it.host.lines, i: 0, shown: 0, choice: it.kind === 'minigame' ? it : null, pick: 0 };
   $('dialog').classList.remove('hidden');
-  $('dialogName').textContent = it.name;
+  $('dialogName').textContent = dialog.name;
+  $('dialogName').style.background = it.tag || it.host?.tag || '#C9A77A';
   $('dialogText').textContent = '';
+  $('dialogChoice').classList.add('hidden');
+  $('prompt').classList.add('hidden');
 }
 function closeDialog() { dialog = null; $('dialog').classList.add('hidden'); }
+function renderChoice() { $('dialogChoice').querySelectorAll('.choice').forEach((b, i) => b.classList.toggle('on', i === dialog.pick)); }
+function choose(c) {
+  const it = dialog?.choice;
+  closeDialog();
+  if (c === 'yes' && it) { sfx.open(); miniEntry = it; mini = getGame(it.game); transition(() => setMode('mini')); }
+  else { sfx.click(); toast('다음에 또 놀자!'); }
+}
 
 function interact() {
   if (dialog) {
     const line = dialog.lines[dialog.i];
-    if (dialog.shown < line.length) { dialog.shown = line.length; return; } // 타자 효과 건너뛰기
+    if (dialog.shown < line.length) { dialog.shown = line.length; return; }
+    if (dialog.choice && dialog.i === dialog.lines.length - 1) { choose(dialog.pick ? 'no' : 'yes'); return; }
     dialog.i++; dialog.shown = 0;
     if (dialog.i >= dialog.lines.length) closeDialog();
     sfx.click();
     return;
   }
   if (!nearest) return;
+  goal = null;
   if (nearest.kind === 'dialog') { sfx.click(); openDialog(nearest); }
   if (nearest.kind === 'subway') { sfx.open(); openSubway(nearest.station); }
   if (nearest.kind === 'watertaxi') {
@@ -231,14 +232,13 @@ function interact() {
   }
   if (nearest.kind === 'tour') startTour();
   if (nearest.kind === 'minigame') {
-    sfx.open();
-    miniEntry = nearest; mini = getGame(nearest.game);
+    if (nearest.host) { sfx.click(); openDialog(nearest); return; }
+    sfx.open(); miniEntry = nearest; mini = getGame(nearest.game);
     transition(() => setMode('mini'));
   }
 }
 
 // ---------- 지하철 2호선 ----------
-// 순환선 위 자리 (네모난 고리를 시계 방향으로: 위쪽 홍대입구·시청·왕십리, 아래쪽 잠실·강남·신도림)
 const LOOP_POS = { hongdae: [18, 22], cityhall: [50, 22], wangsimni: [82, 22], jamsil: [82, 78], gangnam: [50, 78], sindorim: [18, 78] };
 function openSubway(from) {
   subway = { from };
@@ -249,7 +249,7 @@ function openSubway(from) {
   $('subwayLoop').innerHTML = '<div class="loop-line"></div>' + world.stations.map((s) => {
     const [l, t] = LOOP_POS[s.id], cur = s.id === from;
     const key = cur ? '' : ++n;
-    return `<button class="stop${cur ? ' here' : ''}" style="left:${l}%;top:${t}%" ${cur ? 'disabled' : `data-go="${s.id}" data-key="${key}"`}>
+    return `<button type="button" class="stop${cur ? ' here' : ''}" style="left:${l}%;top:${t}%" ${cur ? 'disabled' : `data-go="${s.id}" data-key="${key}"`}>
       <i></i><b>${s.name}</b><small>${cur ? '현재 위치' : `${key} · ${travelMinutes(here, s)}분`}</small><em>${s.near}</em></button>`;
   }).join('');
   $('subwayPanel').classList.remove('hidden');
@@ -257,23 +257,20 @@ function openSubway(from) {
 function closeSubway() { subway = null; $('subwayPanel').classList.add('hidden'); }
 $('subwayClose').onclick = () => { sfx.click(); closeSubway(); };
 $('subwayLoop').onclick = (e) => { const b = e.target.closest('[data-go]'); if (b) rideTo(b.dataset.go); };
-// 순환선에서 가까운 쪽으로 가는 정거장 수 → 게임 시간(분)
 function travelMinutes(a, b) {
   const order = STATIONS.map((s) => s.id), N = order.length, i = order.indexOf(a.id), j = order.indexOf(b.id);
-  const hops = Math.min((i - j + N) % N, (j - i + N) % N);
-  return 10 + hops * 10;
+  return 10 + Math.min((i - j + N) % N, (j - i + N) % N) * 10;
 }
 function rideTo(id) {
   if (!subway) return;
   const from = world.stations.find((s) => s.id === subway.from), to = world.stations.find((s) => s.id === id);
-  closeSubway();
-  sfx.click();
+  closeSubway(); sfx.click();
   const tv = $('travel');
   $('travelText').innerHTML = `<span class="line2-badge">2</span> ${from.name} → <b>${to.name}</b><br><small>이번 역은 ${to.name}, ${to.name}역입니다</small>`;
   transition(() => {
     tv.classList.remove('hidden');
     player.position.set(to.exit[0], 0, to.exit[1]);
-    yaw = 0; player.rotation.y = 0;
+    yaw = 0; player.rotation.y = 0; goal = null;
     gameMinutes = (gameMinutes + travelMinutes(from, to)) % (24 * 60);
     snapCamera();
     let beeps = 0; const tick = setInterval(() => { sfx.tick(); if (++beeps >= 3) clearInterval(tick); }, 420);
@@ -281,14 +278,14 @@ function rideTo(id) {
   });
 }
 
-// ---------- 택시 (데모) ----------
-// 요금: 걸어서 10초 걸리는 거리마다 10골드 (걷는 속도 WALK_SPEED 기준, 직선거리)
-const WALK_SPEED = 4.2, CAB_FARE_PER_SEC = 1, CAB_MIN_FARE = 5;
-const cabFare = (d) => Math.max(CAB_MIN_FARE, Math.ceil((d / WALK_SPEED) * CAB_FARE_PER_SEC));
+// ---------- 택시 ----------
+// 요금: 걸어서 1초 걸리는 거리마다 1벨 (직선거리, 최소 5벨)
+const WALK_SPEED = 4.2, CAB_MIN_FARE = 5;
+const cabFare = (d) => Math.max(CAB_MIN_FARE, Math.ceil(d / WALK_SPEED));
 function cabPlaces() {
   const out = [];
   for (const p of world.landmarkPins) out.push({ cat: '명소', name: p.name, x: p.x, z: p.z });
-  for (const it of world.interactables) if (it.kind === 'minigame') out.push({ cat: '미니게임', name: it.label, x: it.ret?.[0] ?? it.x, z: it.ret?.[1] ?? it.z });
+  for (const it of world.interactables) if (it.kind === 'minigame') out.push({ cat: '놀이', name: it.title || it.label, x: it.ret?.[0] ?? it.x, z: it.ret?.[1] ?? it.z });
   for (const s of world.stations || []) out.push({ cat: '지하철', name: `${s.name}역`, x: s.exit[0], z: s.exit[1] });
   for (const p of world.piers || []) out.push({ cat: '수상택시', name: `${p.name} 선착장`, x: p.land[0], z: p.land[1] });
   return out;
@@ -305,9 +302,8 @@ function openCab() {
 }
 function closeCab() { cab = null; $('cabPanel').classList.add('hidden'); $('cabSearch').blur(); }
 function renderCab() {
-  const norm = (s) => s.replace(/\s/g, '').toLowerCase(); // 띄어쓰기·대소문자 무시
-  const q = norm($('cabSearch').value);
-  const p = player.position;
+  const norm = (s) => s.replace(/\s/g, '').toLowerCase();
+  const q = norm($('cabSearch').value), p = player.position;
   cab.list = cab.all
     .filter((d) => !q || norm(d.name).includes(q) || d.cat.includes(q))
     .map((d) => { const dist = Math.hypot(d.x - p.x, d.z - p.z); return { ...d, dist, fare: cabFare(dist) }; })
@@ -315,8 +311,8 @@ function renderCab() {
   cab.sel = Math.min(cab.sel, Math.max(0, cab.list.length - 1));
   $('cabList').innerHTML = cab.list.length ? cab.list.map((d, i) => {
     const near = d.dist < 6, poor = d.fare > save.coins;
-    const why = near ? '바로 근처예요' : poor ? '골드가 모자라요' : '';
-    return `<button class="cab-row${i === cab.sel ? ' sel' : ''}" data-i="${i}" ${near || poor ? 'disabled' : ''}>
+    const why = near ? '바로 근처예요' : poor ? '벨이 모자라요' : '';
+    return `<button type="button" class="cab-row${i === cab.sel ? ' sel' : ''}" data-i="${i}" ${near || poor ? 'disabled' : ''}>
       <em class="cat-${d.cat}">${d.cat}</em><b>${d.name}</b>
       <span>${why || `걸어서 ${Math.round(d.dist / WALK_SPEED)}초`}</span><i class="coin"></i><strong>${d.fare}</strong></button>`;
   }).join('') : '<p class="cab-empty">찾는 곳이 없어요</p>';
@@ -325,11 +321,10 @@ function renderCab() {
 function rideCab(d) {
   if (!cab || !d) return;
   if (d.dist < 6) { toast('바로 근처예요. 걸어가 봐요!'); return; }
-  if (d.fare > save.coins) { sfx.miss(); toast(`골드가 ${d.fare - save.coins}개 모자라요`); return; }
+  if (d.fare > save.coins) { sfx.miss(); toast(`벨이 ${d.fare - save.coins}개 모자라요`); return; }
   closeCab();
-  save.coins -= d.fare; persist(); $('hudCoins').textContent = save.coins;
+  save.coins -= d.fare; persist(); $('hudCoins').textContent = save.coins.toLocaleString();
   sfx.coin();
-  // 내릴 자리: 목적지 근처에서 걸을 수 있는 곳
   let spot = [d.x, d.z];
   for (let r = 0; r <= 4; r += 0.5) {
     const n = Math.max(1, Math.round(r * 6)); let ok = false;
@@ -337,13 +332,13 @@ function rideCab(d) {
     if (ok) break;
   }
   const tv = $('travel');
-  $('travelText').innerHTML = `🚕 <b>${d.name}</b>(으)로 가는 중…<br><small>요금 ${d.fare}골드를 냈어요</small>`;
+  $('travelText').innerHTML = `🚕 <b>${d.name}</b>(으)로 가는 중…<br><small>요금 ${d.fare}벨을 냈어요</small>`;
   transition(() => {
     tv.classList.add('cab'); tv.classList.remove('hidden');
-    player.position.set(spot[0], 0, spot[1]); airborne = false; vy = 0;
+    player.position.set(spot[0], 0, spot[1]); airborne = false; vy = 0; goal = null;
     gameMinutes = (gameMinutes + Math.max(10, Math.round(d.dist / WALK_SPEED / 30) * 10)) % (24 * 60);
     snapCamera();
-    setTimeout(() => transition(() => { tv.classList.add('hidden'); tv.classList.remove('cab'); sfx.open(); toast(`🚕 ${d.name}에 도착했어요! (-${d.fare}골드)`); }), 1500);
+    setTimeout(() => transition(() => { tv.classList.add('hidden'); tv.classList.remove('cab'); sfx.open(); toast(`🚕 ${d.name}에 도착했어요! (-${d.fare}벨)`); }), 1500);
   });
 }
 $('cabBtn').onclick = () => { sfx.click(); if (mode === 'world') (cab ? closeCab() : openCab()); };
@@ -357,11 +352,10 @@ $('cabSearch').onkeydown = (e) => {
 };
 $('cabList').onclick = (e) => { const b = e.target.closest('[data-i]'); if (b && !b.disabled) rideCab(cab.list[+b.dataset.i]); };
 
-// ---------- 결과/연출 ----------
+// ---------- 결과 · 연출 ----------
 function showResult({ id, title, score, coins, rows }) {
   if (typeof save.best !== 'object' || !save.best) save.best = {};
-  const prevBest = save.best[id] || 0;
-  const isBest = score > prevBest;
+  const prevBest = save.best[id] || 0, isBest = score > prevBest;
   save.best[id] = Math.max(prevBest, score);
   save.coins += coins;
   persist();
@@ -372,7 +366,6 @@ function showResult({ id, title, score, coins, rows }) {
   $('rCoins').textContent = coins;
   setTimeout(() => { $('resultScreen').classList.remove('hidden'); if (coins > 0) sfx.coin(); }, 700);
 }
-
 function floatText(pos, text, cls, cam) {
   const v = pos.clone().project(cam);
   const el = document.createElement('div');
@@ -383,7 +376,6 @@ function floatText(pos, text, cls, cam) {
   $('floaters').appendChild(el);
   setTimeout(() => el.remove(), 950);
 }
-
 let toastT;
 function toast(msg) {
   const t = $('toast');
@@ -391,73 +383,71 @@ function toast(msg) {
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), 2600);
 }
 
-// ---------- 월드 업데이트 ----------
-// 카메라: 플레이어 주위를 도는 궤도 (마우스 드래그로 회전, 휠로 줌)
-const CAM_DIST = 13.8, CAM_PITCH = 0.76;
-const cam = { yaw: 0, pitch: CAM_PITCH, target: new THREE.Vector3() };
-// pitch가 PITCH_LOW보다 내려가면 카메라는 땅 가까이에 머물고, 대신 고개를 들어 하늘을 올려다봄
-const PITCH_MIN = -0.5, PITCH_LOW = 0.2, PITCH_FLOOR = 0.08;
-function camOffset() {
-  const d = CAM_DIST * zoom, p = Math.max(cam.pitch, PITCH_FLOOR);
-  return new THREE.Vector3(Math.sin(cam.yaw) * Math.cos(p) * d, Math.sin(p) * d, Math.cos(cam.yaw) * Math.cos(p) * d);
-}
+// ---------- 카메라 (원래 서울섬: 플레이어 뒤 위에서 내려다봄) ----------
+const cam = { yaw: 0, pitch: 0.55, dist: 14, target: new THREE.Vector3() };
 function placeCamera() {
-  camera.position.copy(cam.target).add(camOffset());
-  const look = Math.max(0, PITCH_LOW - cam.pitch); // 0 ~ 0.9
-  if (look <= 0) { camera.lookAt(cam.target.x, cam.target.y + 0.8, cam.target.z); return; }
-  // 평소 바라보는 각도(살짝 아래)에서 위로 들어 올림 → 최대 약 30° (아래쪽에 도시 스카이라인이 남게)
-  const dx = cam.target.x - camera.position.x, dz = cam.target.z - camera.position.z, dh = Math.hypot(dx, dz);
-  const base = Math.atan2(cam.target.y + 0.8 - camera.position.y, dh);
-  const elev = base + (look / (PITCH_LOW - PITCH_MIN)) * (0.52 - base);
-  camera.lookAt(camera.position.x + (dx / dh) * Math.cos(elev), camera.position.y + Math.sin(elev), camera.position.z + (dz / dh) * Math.cos(elev));
+  const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  camera.position.set(cam.target.x + Math.sin(cam.yaw) * cp * cam.dist, cam.target.y + sp * cam.dist, cam.target.z + Math.cos(cam.yaw) * cp * cam.dist);
+  camera.lookAt(cam.target.x, cam.target.y + 0.4, cam.target.z);
 }
-function snapCamera() {
-  cam.target.set(player.position.x, 0, player.position.z);
-  placeCamera();
-}
-function resetView() { cam.yaw = 0; cam.pitch = CAM_PITCH; zoom = 1; }
+function snapCamera() { cam.target.set(player.position.x, player.position.y + 1, player.position.z); placeCamera(); }
+function resetView() { cam.yaw = 0; cam.pitch = 0.55; cam.dist = 14; }
 
-// 드래그로 시점 돌리기 (월드·미리보기)
-const drag = { on: false, x: 0, y: 0, moved: 0 };
-let pv = { yaw: 0, manual: 0, dist: 4.4 };
-$('view').addEventListener('pointerdown', (e) => {
-  if (mode !== 'world' && mode !== 'preview') return;
-  drag.on = true; drag.x = e.clientX; drag.y = e.clientY; drag.moved = 0;
-  $('view').setPointerCapture(e.pointerId);
-  $('view').classList.add('grabbing');
+const drag = { on: false, x: 0, y: 0, sx: 0, sy: 0, t: 0 };
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.focus({ preventScroll: true });
+  if (mode !== 'world') return;
+  Object.assign(drag, { on: true, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() });
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* 무시 */ }
+  canvas.classList.add('grabbing');
+  hideHint();
 });
-$('view').addEventListener('pointermove', (e) => {
+canvas.addEventListener('pointermove', (e) => {
   if (!drag.on) return;
-  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
-  if (mode === 'world') {
-    cam.yaw -= dx * 0.006;
-    cam.pitch = THREE.MathUtils.clamp(cam.pitch + dy * 0.005, PITCH_MIN, 1.4); // 위로 끝까지 끌면 하늘을 올려다봄
-  } else if (mode === 'preview') {
-    pv.yaw -= dx * 0.008; pv.manual = 4; // 직접 돌리면 4초간 자동 회전 멈춤
-  }
+  cam.yaw -= (e.clientX - drag.x) * 0.006;
+  cam.pitch = THREE.MathUtils.clamp(cam.pitch + (e.clientY - drag.y) * 0.004, 0.25, 1.15);
+  drag.x = e.clientX; drag.y = e.clientY;
 });
-const endDrag = () => { drag.on = false; $('view').classList.remove('grabbing'); };
-$('view').addEventListener('pointerup', endDrag);
-$('view').addEventListener('pointercancel', endDrag);
-$('view').addEventListener('contextmenu', (e) => { if (mode === 'world' || mode === 'preview') e.preventDefault(); });
+const endDrag = (e) => {
+  if (!drag.on) return;
+  drag.on = false; canvas.classList.remove('grabbing');
+  if (e.type === 'pointerup' && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6 && performance.now() - drag.t < 500) clickMove(e.clientX, e.clientY);
+};
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-function jump() {
-  if (airborne) return;
-  airborne = true; vy = 8.2;
-  sfx.jump();
+// 땅 클릭 → 그곳으로 걷기 (휘는 지평선을 따라 광선을 조금씩 내려 보냄)
+function clickMove(cx, cy) {
+  if (taxi.riding || dialog || subway || cab || tour) { if (dialog) interact(); return; }
+  const rc = canvas.getBoundingClientRect();
+  camera.updateMatrixWorld();
+  const v = new THREE.Vector3((cx - rc.left) / rc.width * 2 - 1, -((cy - rc.top) / rc.height * 2 - 1), 0.5).applyMatrix4(camera.projectionMatrixInverse).normalize();
+  const c = U.uCurve.value, q = new THREE.Vector3();
+  const wy = (t) => { const z = v.z * t; q.set(v.x * t, v.y * t + c * z * z, z).applyMatrix4(camera.matrixWorld); return q.y; };
+  let prev = 0.5, hit = -1;
+  for (let t = 0.5; t < 260; t += 0.5) { if (wy(t) <= 0.05) { hit = t; break; } prev = t; }
+  if (hit < 0) return;
+  let lo = prev, hi = hit;
+  for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (wy(m) <= 0.05) hi = m; else lo = m; }
+  wy(hi);
+  goal = { x: q.x, z: q.z, t: 0 };
+  marker.visible = true; marker.position.set(q.x, 0.08, q.z);
 }
+const marker = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.6, 24).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff8fa3', transparent: true, opacity: 0.9, depthWrite: false }));
+marker.visible = false; marker.renderOrder = 2; world.scene.add(marker);
 
+function jump() { if (airborne) return; airborne = true; vy = 8.2; sfx.jump(); }
+
+let lastZone = '', lastArea = '', zoneT = 0;
 function updateWorld(dt, t) {
   const mv = new THREE.Vector3();
   if (taxi.riding) {
-    // 수상택시 운전: 캐릭터는 배 뒤쪽 자리에 앉아 함께 움직임
     const b = taxi.update(dt, t, dialog ? new Set() : keys, cam.yaw);
     yaw = b.heading;
     player.position.set(b.x - Math.sin(b.heading) * 0.55, b.y, b.z - Math.cos(b.heading) * 0.55);
     player.visible = b.sink < 0.6;
   } else if (!dialog && !subway && !cab) {
-    // 카메라가 보는 방향 기준으로 이동 (W = 화면 안쪽)
     let f = 0, r = 0;
     if (keys.has('KeyW') || keys.has('ArrowUp')) f += 1;
     if (keys.has('KeyS') || keys.has('ArrowDown')) f -= 1;
@@ -465,57 +455,52 @@ function updateWorld(dt, t) {
     if (keys.has('KeyD') || keys.has('ArrowRight')) r += 1;
     const sy = Math.sin(cam.yaw), cy = Math.cos(cam.yaw);
     mv.set(-sy * f + cy * r, 0, -cy * f - sy * r);
+    if (!mv.lengthSq() && goal) {
+      const gx = goal.x - player.position.x, gz = goal.z - player.position.z, gl = Math.hypot(gx, gz);
+      if (gl < 0.35) goal = null; else mv.set(gx, 0, gz);
+    }
   }
   const moving = mv.lengthSq() > 0;
   const run = keys.has('ShiftLeft') || keys.has('ShiftRight');
   if (moving) {
-    mv.normalize().multiplyScalar((run ? 7 : 4.2) * dt);
-    const p = player.position;
+    mv.normalize().multiplyScalar((run ? 9 : 5) * dt);
+    const p = player.position, ox = p.x, oz = p.z;
     if (world.canWalk(p.x + mv.x, p.z)) p.x += mv.x;
     if (world.canWalk(p.x, p.z + mv.z)) p.z += mv.z;
+    if (goal) { if (Math.hypot(p.x - ox, p.z - oz) < mv.length() * 0.25) { goal.t += dt; if (goal.t > 0.5) goal = null; } else goal.t = 0; }
     yaw = Math.atan2(mv.x, mv.z);
     stepT -= dt;
     if (stepT <= 0 && !airborne) { sfx.step(); stepT = run ? 0.22 : 0.32; }
   }
-  // 점프 (중력) — 바닥 높이는 다리 위면 다리 높이
+  if (!goal) marker.visible = false; else { const s = 1 + Math.sin(t * 8) * 0.15; marker.scale.set(s, 1, s); }
   if (!taxi.riding) {
     const gy = world.groundY(player.position.x, player.position.z);
     if (airborne) {
-      vy -= 26 * dt;
-      player.position.y += vy * dt;
+      vy -= 26 * dt; player.position.y += vy * dt;
       if (player.position.y <= gy) { player.position.y = gy; vy = 0; airborne = false; sfx.step(); }
     } else player.position.y = gy;
+    player.visible = true;
   }
-  if (!taxi.riding) player.visible = true;
   avatar.animate(dt, t, { moving, run, air: airborne && !taxi.riding, yaw });
   world.update(dt, t, player.position, camera);
-  world.followSun(player.position);
 
-  // 카메라 따라가기
-  cam.target.lerp(new THREE.Vector3(player.position.x, 0, player.position.z), 1 - Math.exp(-dt * 6));
+  cam.target.lerp(new THREE.Vector3(player.position.x, player.position.y + 1, player.position.z), 1 - Math.exp(-dt * 6));
   placeCamera();
 
-  // 가장 가까운 상호작용 대상
+  // 가장 가까운 상호작용 대상 → 아래쪽 E 알약
   nearest = null;
   let best = Infinity;
   if (taxi.riding) {
-    // 배를 타고 있을 땐 가까운 선착장에서 내리기만 가능
     const p = taxi.nearPier();
     if (p) nearest = { x: p.boatAt[0], z: p.boatAt[1], label: `내리기 (${p.name} 선착장)`, kind: 'leaveTaxi', pier: p };
   } else for (const it of world.interactables) {
     const d = Math.hypot(it.x - player.position.x, it.z - player.position.z);
     if (d < it.r && d < best) { best = d; nearest = it; }
   }
-  const bubble = $('promptBubble');
-  if (nearest && !dialog && !subway && !cab) {
-    const v = new THREE.Vector3(nearest.x, 2.6, nearest.z).project(camera);
-    bubble.innerHTML = `<b>E</b>${nearest.label}`;
-    bubble.style.left = `${(v.x * 0.5 + 0.5) * innerWidth}px`;
-    bubble.style.top = `${(-v.y * 0.5 + 0.5) * innerHeight}px`;
-    bubble.classList.remove('hidden');
-  } else bubble.classList.add('hidden');
+  const show = nearest && !dialog && !subway && !cab;
+  $('prompt').classList.toggle('hidden', !show);
+  if (show && $('promptT').textContent !== nearest.label) $('promptT').textContent = nearest.label;
 
-  // 대화 타자 효과
   if (dialog) {
     const line = dialog.lines[dialog.i];
     if (dialog.shown < line.length) {
@@ -524,209 +509,186 @@ function updateWorld(dt, t) {
       if (Math.floor(dialog.shown) !== before && before % 3 === 0) sfx.talk();
     }
     $('dialogText').textContent = line.slice(0, Math.floor(dialog.shown));
+    const ask = dialog.choice && dialog.i === dialog.lines.length - 1 && dialog.shown >= line.length;
+    $('dialogChoice').classList.toggle('hidden', !ask);
   }
 
-  // 지금 있는 곳(구) + 미니맵
-  const place = world.placeName(player.position.x, player.position.z);
-  if (place !== lastPlace) { lastPlace = place; $('hudPlace').textContent = `서울 · ${place}`; }
+  zoneT += dt;
+  if (zoneT > 0.2) {
+    zoneT = 0;
+    const p = player.position;
+    let zone = world.placeName(p.x, p.z);
+    let bd = 9;
+    for (const l of world.landmarkPins) { const d = Math.hypot(l.x - p.x, l.z - p.z); if (d < bd) { bd = d; zone = l.name; } }
+    const area = world.areaName(p.x, p.z);
+    if (zone !== lastZone) { lastZone = zone; $('zone').textContent = zone; }
+    if (area !== lastArea) { lastArea = area; $('area').textContent = area; }
+  }
   drawMinimap();
   tickClock(dt);
 }
 
-// ---------- 팔각정 망원경: 서울 하늘 둘러보기 ----------
+// ---------- 팔각정 망원경 ----------
 function startTour() {
   sfx.open(); keys.clear();
-  $('promptBubble').classList.add('hidden');
-  $('hud').classList.add('hidden'); // 둘러보는 동안 화면을 시원하게
+  $('prompt').classList.add('hidden');
+  $('hud').classList.add('hidden');
   const home = world.interactables.find((i) => i.kind === 'tour');
-  tour = new Tour(camera, home, { pos: camera.position.clone(), look: new THREE.Vector3(cam.target.x, cam.target.y + 0.8, cam.target.z) });
+  tour = new Tour(camera, home, { pos: camera.position.clone(), look: new THREE.Vector3(cam.target.x, cam.target.y + 0.4, cam.target.z) });
+  U.uCurve.value = WORLD_CURVE * 0.35; // 하늘에서 내려다볼 땐 덜 휘게
 }
 function updateTour(dt, t) {
-  avatar.animate(dt, t, { yaw: Math.PI }); // 망원경 쪽(남쪽)을 보고 서 있음
+  avatar.animate(dt, t, { yaw: Math.PI });
   world.update(dt, t, null, null);
   tickClock(dt);
-  drawMinimap();
   if (tour.update(dt)) endTour();
 }
 function endTour() {
   tour.dispose(); tour = null;
+  U.uCurve.value = WORLD_CURVE;
   $('hud').classList.remove('hidden');
   snapCamera();
-  // 해가 진 뒤에 보면 야경 도장 (처음 한 번 보상)
   if (dayNight.sample(gameMinutes / 60).night > 0.5) {
     if (!save.stamps?.nightView) {
       save.stamps = { ...save.stamps, nightView: true }; save.coins += 50; persist();
-      $('hudCoins').textContent = save.coins; sfx.gold();
-      toast('🌃 서울 야경 도장을 받았어요! +50골드');
-    } else toast('반짝반짝 서울 야경이에요 🌃');
-  } else toast('해가 진 뒤에 다시 보면 반짝이는 야경을 볼 수 있어요! (야경 도장 +50골드)');
+      $('hudCoins').textContent = save.coins.toLocaleString(); sfx.gold();
+      toast('🌃 서울섬 야경 도장을 받았어요! +50벨');
+    } else toast('반짝반짝 서울섬 야경이에요 🌃');
+  } else toast('해가 진 뒤에 다시 보면 반짝이는 야경을 볼 수 있어요! (야경 도장 +50벨)');
 }
 
-// 시계 (스타듀처럼 10분 단위) — 월드와 미니게임 모두에서 흐름
+// ---------- 시계: 실제 7초 = 게임 10분 ----------
+let dusk = null;
 function tickClock(dt) {
   gameMinutes = (gameMinutes + dt * (10 / 7)) % (24 * 60);
-  const m10 = Math.floor(gameMinutes / 10) * 10;
-  const hh = Math.floor(m10 / 60), mm = m10 % 60;
-  const txt = `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'am' : 'pm'}`;
-  $('hudTime').textContent = txt;
-  $('miniTime').textContent = txt;
+  const m10 = Math.floor(gameMinutes / 10) * 10, hh = Math.floor(m10 / 60), mi = m10 % 60;
+  const txt = `${((hh + 11) % 12) + 1}:${String(mi).padStart(2, '0')}`;
+  if ($('hudTime').textContent !== txt) { $('hudTime').textContent = txt; $('hudAmPm').textContent = hh < 12 ? 'AM' : 'PM'; $('miniTime').textContent = `${txt} ${hh < 12 ? 'AM' : 'PM'}`; }
+  // 해 질 녘부터 새벽까지는 노을 테마 (원래 서울섬 '노을' 화면처럼 글꼴·색이 바뀜)
+  const h = gameMinutes / 60, d = h >= 17.5 || h < 5.5;
+  if (d !== dusk) { dusk = d; document.body.classList.toggle('dusk', d); }
 }
-
-function setDate() {
+(() => {
   const d = new Date();
-  const mo = d.getMonth() + 1;
-  const season = mo >= 3 && mo <= 5 ? '봄' : mo <= 8 && mo >= 6 ? '여름' : mo >= 9 && mo <= 11 ? '가을' : '겨울';
-  $('hudDate').textContent = `${season} ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
-}
-setDate();
+  $('hudDate').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 · ${'일월화수목금토'[d.getDay()]}요일 · 서울섬`;
+})();
 
-// ---------- 미니맵 ----------
-let lastPlace = '';
-const mm = $('minimap'), mctx = mm.getContext('2d');
+// ---------- 미니맵 (동그란 작은 지도 / M: 큰 지도) ----------
+const mm = $('minimap'), mctx = mm.getContext('2d'), mmWrap = $('mapWrap');
+const mm2Big = () => mmWrap.classList.contains('big');
 function sizeMinimap() {
-  const big = mm.classList.contains('big');
-  const w = big ? Math.min(innerWidth - 40, (innerHeight - 140) * (world.minimap.width / world.minimap.height), 900) : 198;
-  mm.width = Math.round(w); mm.height = Math.round(w * world.minimap.height / world.minimap.width);
+  const img = world.minimap, big = mm2Big();
+  const w = big ? Math.min(innerWidth - 40, (innerHeight - 120) * (img.width / img.height), 900) : (innerWidth < 760 ? 108 : 160);
+  const h = big ? w * img.height / img.width : w;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  mm.width = Math.round(w * dpr); mm.height = Math.round(h * dpr);
+  mm.style.width = `${Math.round(w)}px`; mm.style.height = `${Math.round(h)}px`;
 }
-sizeMinimap();
-// 지도 확대/이동: 휠 = 확대·축소 (작은 지도는 내 위치 중심, 큰 지도는 마우스 위치 중심), 큰 지도는 드래그로 이동
-const mmv = { small: 2, big: 1, cx: 0, cz: 0, drag: null };
-const MM_MIN = 1, MM_MAX = 10;
+const mmv = { small: 2.2, big: 1, cx: 0, cz: 0, drag: null };
 function mmToggle() {
-  mm.classList.toggle('big');
-  if (mm.classList.contains('big')) { mmv.cx = player?.position.x || 0; mmv.cz = player?.position.z || 0; }
+  mmWrap.classList.toggle('big');
+  if (mm2Big()) { mmv.cx = player?.position.x || 0; mmv.cz = player?.position.z || 0; }
   sizeMinimap();
 }
-// 지금 지도 보기 상태: 배율 k(지도 px당 화면 px), 중심(월드 좌표)
 function mmView() {
-  const img = world.minimap, big = mm.classList.contains('big');
+  const img = world.minimap, big = mm2Big();
   const zoom = big ? mmv.big : mmv.small, k = (mm.width / img.width) * zoom;
   let cx = big ? mmv.cx : player.position.x, cz = big ? mmv.cz : player.position.z;
-  const hw = mm.width / 2 / k, hh = mm.height / 2 / k;
-  cx = hw >= img.width / 2 ? 0 : THREE.MathUtils.clamp(cx, -img.width / 2 + hw, img.width / 2 - hw);
-  cz = hh >= img.height / 2 ? 0 : THREE.MathUtils.clamp(cz, -img.height / 2 + hh, img.height / 2 - hh);
-  if (big) { mmv.cx = cx; mmv.cz = cz; }
+  if (big) {
+    const hw = mm.width / 2 / k, hh = mm.height / 2 / k;
+    cx = hw >= img.width / 2 ? 0 : THREE.MathUtils.clamp(cx, -img.width / 2 + hw, img.width / 2 - hw);
+    cz = hh >= img.height / 2 ? 0 : THREE.MathUtils.clamp(cz, -img.height / 2 + hh, img.height / 2 - hh);
+    mmv.cx = cx; mmv.cz = cz;
+  }
   return { k, cx, cz, zoom, big };
 }
 mm.addEventListener('wheel', (e) => {
   e.preventDefault(); e.stopPropagation();
   const v = mmView(), r = mm.getBoundingClientRect();
   const sx = (e.clientX - r.left) * (mm.width / r.width), sy = (e.clientY - r.top) * (mm.height / r.height);
-  const wx = v.cx + (sx - mm.width / 2) / v.k, wz = v.cz + (sy - mm.height / 2) / v.k; // 마우스 아래 지점
-  const next = THREE.MathUtils.clamp(v.zoom * (e.deltaY < 0 ? 1.25 : 0.8), MM_MIN, MM_MAX);
-  if (v.big) {
-    mmv.big = next;
-    const k2 = (mm.width / world.minimap.width) * next;
-    mmv.cx = wx - (sx - mm.width / 2) / k2; mmv.cz = wz - (sy - mm.height / 2) / k2;
-  } else mmv.small = next;
+  const wx = v.cx + (sx - mm.width / 2) / v.k, wz = v.cz + (sy - mm.height / 2) / v.k;
+  const next = THREE.MathUtils.clamp(v.zoom * (e.deltaY < 0 ? 1.25 : 0.8), 1, 10);
+  if (v.big) { mmv.big = next; const k2 = (mm.width / world.minimap.width) * next; mmv.cx = wx - (sx - mm.width / 2) / k2; mmv.cz = wz - (sy - mm.height / 2) / k2; }
+  else mmv.small = next;
 }, { passive: false });
-mm.addEventListener('pointerdown', (e) => {
-  mmv.drag = { x: e.clientX, y: e.clientY, moved: 0 };
-  mm.setPointerCapture(e.pointerId);
-});
+mm.addEventListener('pointerdown', (e) => { mmv.drag = { x: e.clientX, y: e.clientY, moved: 0 }; mm.setPointerCapture(e.pointerId); });
 mm.addEventListener('pointermove', (e) => {
   const d = mmv.drag; if (!d) return;
   const dx = e.clientX - d.x, dy = e.clientY - d.y; d.x = e.clientX; d.y = e.clientY; d.moved += Math.abs(dx) + Math.abs(dy);
-  if (mm.classList.contains('big')) {
-    const v = mmView(), r = mm.getBoundingClientRect();
-    mmv.cx -= dx * (mm.width / r.width) / v.k; mmv.cz -= dy * (mm.height / r.height) / v.k;
-    mm.style.cursor = 'grabbing';
-  }
+  if (mm2Big()) { const v = mmView(), r = mm.getBoundingClientRect(); mmv.cx -= dx * (mm.width / r.width) / v.k; mmv.cz -= dy * (mm.height / r.height) / v.k; }
 });
-mm.addEventListener('pointerup', () => {
-  const d = mmv.drag; mmv.drag = null; mm.style.cursor = '';
-  if (d && d.moved < 5) mmToggle(); // 끌지 않고 눌렀으면 크게/작게
-});
+mm.addEventListener('pointerup', () => { const d = mmv.drag; mmv.drag = null; if (d && d.moved < 5) mmToggle(); });
 function drawMinimap() {
-  const W = mm.width, H = mm.height, img = world.minimap;
+  const W = mm.width, H = mm.height, img = world.minimap, dpr = W / parseFloat(mm.style.width || W);
   const { k, cx, cz, zoom, big } = mmView();
   const sx = (x) => W / 2 + (x - cx) * k, sy = (z) => H / 2 + (z - cz) * k;
-  const showNames = big || zoom >= 5; // 작은 지도는 많이 확대했을 때만 이름 표시 (겹치지 않게)
-  mctx.imageSmoothingEnabled = false;
-  mctx.fillStyle = '#3e84c4'; mctx.fillRect(0, 0, W, H);
+  const showNames = big || zoom >= 5;
+  const css = getComputedStyle(document.body);
+  mctx.imageSmoothingEnabled = true;
+  mctx.fillStyle = css.getPropertyValue('--mm-sea') || '#8fd8e8'; mctx.fillRect(0, 0, W, H);
   mctx.drawImage(img, sx(-img.width / 2), sy(-img.height / 2), img.width * k, img.height * k);
-  const px = sx(player.position.x), pz = sy(player.position.z);
-  // 랜드마크 점
-  mctx.font = `700 ${showNames ? 12 : 9}px Galmuri11`;
+  const font = (px) => `${px * dpr}px Jua, sans-serif`;
+  const label = (txt, x, y, col) => { mctx.font = font(12); mctx.lineWidth = 3 * dpr; mctx.strokeStyle = 'rgba(255,250,234,0.95)'; mctx.strokeText(txt, x, y); mctx.fillStyle = col; mctx.fillText(txt, x, y); };
   mctx.textAlign = 'center';
   for (const l of world.landmarkPins) {
     const x = sx(l.x), y = sy(l.z);
     if (x < -40 || y < -20 || x > W + 40 || y > H + 20) continue;
-    mctx.fillStyle = '#e8413a'; mctx.fillRect(x - 2, y - 2, 4, 4);
-    if (showNames) { mctx.lineWidth = 3; mctx.strokeStyle = 'rgba(255,248,230,0.9)'; mctx.strokeText(l.name, x, y - 5); mctx.fillStyle = '#3a2410'; mctx.fillText(l.name, x, y - 5); }
+    mctx.fillStyle = '#ff8fa3'; mctx.beginPath(); mctx.arc(x, y, 2.6 * dpr, 0, 7); mctx.fill();
+    if (showNames) label(l.name, x, y - 6 * dpr, '#6b4f2e');
   }
-  // 수상택시 선착장 (파란 네모)
+  for (const it of world.interactables) {
+    if (it.kind !== 'minigame') continue;
+    const x = sx(it.x), y = sy(it.z);
+    mctx.fillStyle = '#ffd166'; mctx.strokeStyle = '#fff'; mctx.lineWidth = 1.5 * dpr;
+    mctx.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2 - Math.PI / 2, r = (i % 2 ? 2 : 4.5) * dpr; mctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } mctx.closePath(); mctx.fill(); mctx.stroke();
+  }
   for (const p of world.piers) {
-    const x = sx(p.x), y = sy(p.z);
-    mctx.fillStyle = '#2f7fd8'; mctx.strokeStyle = '#ffffff'; mctx.lineWidth = 1.5;
-    const r = showNames ? 4.5 : 3; mctx.fillRect(x - r, y - r, r * 2, r * 2); mctx.strokeRect(x - r, y - r, r * 2, r * 2);
-    if (showNames) { mctx.font = '700 12px Galmuri11'; mctx.lineWidth = 3; mctx.strokeStyle = 'rgba(255,248,230,0.9)'; mctx.strokeText(`${p.name} 선착장`, x, y + 16); mctx.fillStyle = '#1f4f9a'; mctx.fillText(`${p.name} 선착장`, x, y + 16); }
+    const x = sx(p.x), y = sy(p.z), r = (showNames ? 4.5 : 3) * dpr;
+    mctx.fillStyle = '#7bc8f6'; mctx.strokeStyle = '#fff'; mctx.lineWidth = 1.5 * dpr;
+    mctx.beginPath(); mctx.roundRect(x - r, y - r, r * 2, r * 2, r * 0.4); mctx.fill(); mctx.stroke();
+    if (showNames) label(`${p.name} 선착장`, x, y + 16 * dpr, '#23607A');
   }
-  // 지하철역 (초록 동그라미)
   for (const s of world.stations) {
     const x = sx(s.x), y = sy(s.z);
-    mctx.fillStyle = LINE2; mctx.strokeStyle = '#ffffff'; mctx.lineWidth = 1.5;
-    mctx.beginPath(); mctx.arc(x, y, showNames ? 5 : 3.5, 0, Math.PI * 2); mctx.fill(); mctx.stroke();
-    if (showNames) { mctx.font = '700 12px Galmuri11'; mctx.lineWidth = 3; mctx.strokeStyle = 'rgba(255,248,230,0.9)'; mctx.strokeText(`${s.name}역`, x, y + 16); mctx.fillStyle = '#1f5f2a'; mctx.fillText(`${s.name}역`, x, y + 16); }
+    mctx.fillStyle = LINE2; mctx.strokeStyle = '#fff'; mctx.lineWidth = 1.5 * dpr;
+    mctx.beginPath(); mctx.arc(x, y, (showNames ? 5 : 3.5) * dpr, 0, 7); mctx.fill(); mctx.stroke();
+    if (showNames) label(`${s.name}역`, x, y + 16 * dpr, '#2f7a3a');
   }
   if (big) {
-    mctx.font = '700 14px Galmuri11'; mctx.lineWidth = 3; mctx.strokeStyle = 'rgba(40,70,30,0.75)'; mctx.fillStyle = '#ffffff';
-    for (const g of world.guLabels) { const x = sx(g.x), y = sy(g.z) + 16; mctx.strokeText(g.name, x, y); mctx.fillText(g.name, x, y); }
+    mctx.font = font(14); mctx.lineWidth = 3 * dpr; mctx.strokeStyle = 'rgba(107,79,46,0.6)'; mctx.fillStyle = '#ffffff';
+    for (const g of world.guLabels) { const x = sx(g.x), y = sy(g.z) + 16 * dpr; mctx.strokeText(g.name, x, y); mctx.fillText(g.name, x, y); }
   }
-  // 내 위치 (보는 방향 화살표)
-  mctx.save(); mctx.translate(px, pz); mctx.rotate(-yaw + Math.PI);
-  mctx.fillStyle = '#ffd23f'; mctx.strokeStyle = '#3a2410'; mctx.lineWidth = 1.5;
-  mctx.beginPath(); mctx.moveTo(0, -6); mctx.lineTo(4.5, 5); mctx.lineTo(-4.5, 5); mctx.closePath(); mctx.fill(); mctx.stroke();
+  // 내 위치 (원래 서울섬 화살표)
+  mctx.save(); mctx.translate(sx(player.position.x), sy(player.position.z)); mctx.rotate(-yaw + Math.PI);
+  mctx.scale(dpr, dpr);
+  mctx.fillStyle = css.getPropertyValue('--mm-me') || '#F2A73B'; mctx.strokeStyle = '#ffffff'; mctx.lineWidth = 2; mctx.lineJoin = 'round';
+  mctx.beginPath(); mctx.moveTo(0, -7); mctx.lineTo(5.5, 5); mctx.lineTo(0, 2.5); mctx.lineTo(-5.5, 5); mctx.closePath(); mctx.stroke(); mctx.fill();
   mctx.restore();
 }
 
 // ---------- 루프 ----------
 function resize() {
   const w = innerWidth, h = innerHeight;
-  renderer.setSize(Math.ceil(w / PIX), Math.ceil(h / PIX), false);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.fov = camera.aspect < 0.9 ? 62 : 46; camera.updateProjectionMatrix();
   for (const g of Object.values(games)) g.resize(w / h);
+  sizeMinimap();
 }
-// 그리기 화면을 작은 화면에도 맞게 축소
-function fitDraw() {
-  const el = $('drawInner');
-  el.style.transform = 'none';
-  const w = el.offsetWidth, h = el.offsetHeight;
-  const sc = Math.min(1, (innerHeight - 24) / h, (innerWidth - 24) / w);
-  el.style.transform = `scale(${sc})`;
-}
-addEventListener('resize', () => { resize(); fitDraw(); sizeMinimap(); });
+addEventListener('resize', resize);
 resize();
-fitDraw();
 
 const timer = new THREE.Timer();
 timer.connect(document);
 function frame(ts) {
   timer.update(ts);
-  const dt = Math.min(timer.getDelta(), 0.05);
-  const t = timer.getElapsed();
-  if (mode === 'draw') {
-    const a = t * 0.05;
-    const sp = world.spawn;
-    camera.position.set(sp.x + Math.cos(a) * 44, 42, sp.z + Math.sin(a) * 44);
-    camera.lookAt(sp.x, -2, sp.z);
-    world.update(dt, t, null);
-    dayNight.update(gameMinutes / 60, t, camera.position);
-    world.followSun(new THREE.Vector3(0, 0, 0));
-    editor.tick(dt, t);
-    renderer.render(world.scene, camera);
-  } else if (mode === 'preview') {
-    // 앞쪽 반원을 자동으로 왕복, 드래그하면 직접 돌려볼 수 있음
-    pv.manual = Math.max(0, pv.manual - dt);
-    if (pv.manual <= 0 && !drag.on) pv.yaw += (Math.sin(t * 0.4) * 0.85 - pv.yaw) * Math.min(1, dt * 1.5);
-    const a = pv.yaw, p = player.position, pd = pv.dist * zoom;
-    camera.position.set(p.x + Math.sin(a) * pd, 1.9 * zoom, p.z + Math.cos(a) * pd);
-    camera.lookAt(p.x, 0.35, p.z);
-    // 미리보기: 손 흔들기 → 제자리 걷기 → 점프를 번갈아 보여줌
-    const ph = Math.floor(t / 2.5) % 3;
-    const hop = ph === 2 ? Math.max(0, Math.sin(((t % 2.5) / 2.5) * Math.PI * 2)) : 0;
-    player.position.y = hop * 0.7;
-    avatar.animate(dt, t, { wave: ph === 0, moving: ph === 1, air: hop > 0.05, yaw: ph === 1 ? Math.sin(t * 0.8) * 0.8 : 0 });
+  const dt = Math.min(timer.getDelta(), 0.05), t = timer.getElapsed();
+  if (mode === 'make') {
+    // 꾸미기: 광화문광장에서 내 캐릭터를 앞에서 보여 줌 (화면 오른쪽)
+    const p = player.position;
+    const a = Math.sin(t * 0.4) * 0.6;
+    camera.position.set(p.x + Math.sin(a) * 5.2 - 1.6, 2.4, p.z + Math.cos(a) * 5.2);
+    camera.lookAt(p.x - 1.6, 0.9, p.z);
+    avatar.animate(dt, t, { wave: Math.floor(t / 3) % 2 === 0, yaw: 0 });
     world.update(dt, t, null);
     dayNight.update(gameMinutes / 60, t, camera.position);
     world.followSun(p);
@@ -744,9 +706,12 @@ function frame(ts) {
   }
   requestAnimationFrame(frame);
 }
-setMode('draw');
+rebuildPlayer();
+setMode(save.name ? 'world' : 'make');
+if (mode === 'world') { resetView(); snapCamera(); }
 frame();
 
 // 디버그/테스트용
-window.__game = { setMode, world, renderer, camera, cam, setZoom(z) { zoom = z; }, setTime(h) { gameMinutes = h * 60; }, dayNight, taxi, get player() { return player; }, get mini() { return mini; }, save, games, getGame,
-  enter(id) { miniEntry = world.interactables.find((i) => i.game === id); mini = getGame(id); setMode('mini'); } };
+window.__game = { setMode, world, renderer, camera, cam, setTime(h) { gameMinutes = h * 60; }, dayNight, taxi, get player() { return player; }, get mini() { return mini; }, save, games, getGame,
+  enter(id) { miniEntry = world.interactables.find((i) => i.game === id); mini = getGame(id); setMode('mini'); },
+  warp(x, z) { player.position.set(x, 0, z); snapCamera(); } };

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { basic, rbox, toonMat } from './toon.js';
 import { box } from './world.js';
 import { geo, T, WK, ZN, NX, NZ, HX, HZ, GU } from './seoulMap.js';
 import { plankTexture, signTexture } from './textures.js';
@@ -27,7 +28,7 @@ export function makeTaxiBoat() {
   box(0.95, 0.5, 1.0, white, 0, 0.47, -0.25, g);                       // 선실
   box(0.97, 0.18, 0.9, '#5fa8e0', 0, 0.55, -0.25, g);                  // 창문 띠
   box(1.05, 0.08, 1.15, '#e8413a', 0, 0.76, -0.25, g);                 // 지붕
-  const sign = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.2, 0.08), new THREE.MeshLambertMaterial({ map: signTexture('TAXI', { w: 40, h: 14, size: 10, bg: '#ffd23f', fg: '#3a2410' }) }));
+  const sign = new THREE.Mesh(rbox(0.62, 0.2, 0.08), toonMat({ map: signTexture('TAXI', { w: 40, h: 14, size: 10, bg: '#ffd23f', fg: '#3a2410' }) }));
   sign.position.set(0, 0.92, -0.25); g.add(sign);
   box(0.3, 0.08, 0.3, '#3a3f46', 0, 0.1, -1.2, g);                     // 모터
   g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
@@ -65,7 +66,7 @@ export function buildPiers(world) {
   // 작은 다리(하천·노들섬)는 물에 붙어 있어서 그 밑은 살짝 잠기듯 지나감. 한강 다리는 높아서 그냥 밑으로 지나감
   world.underLowBridge = (x, z) => { const [tx, tz] = m.t(x, z); return m.inb(tx, tz) && m.tile[m.i(tx, tz)] === T.BRIDGE && m.bkind[m.i(tx, tz)] === 2; };
 
-  const plank = new THREE.MeshLambertMaterial({ map: plankTexture('#a86c3a', '#7a4a26', '#c98a50') });
+  const plank = toonMat({ map: plankTexture('#a86c3a', '#7a4a26', '#c98a50') });
   plank.map.repeat.set(1, 3);
   world.piers = [];
   for (const P of PIERS) {
@@ -102,7 +103,7 @@ export function buildPiers(world) {
       box(0.16, 1.0, 0.16, '#6b3b1c', px, -0.3, pz, s);
     }
     // 안내판 + 정박해 있는 택시
-    const sg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.42, 0.08), new THREE.MeshLambertMaterial({ map: signTexture(`${P.name} 수상택시`, { w: 96, h: 24, size: 12, bg: '#2f7fd8', fg: '#ffffff' }) }));
+    const sg = new THREE.Mesh(rbox(1.5, 0.42, 0.08), toonMat({ map: signTexture(`${P.name} 수상택시`, { w: 96, h: 24, size: 12, bg: '#2f7fd8', fg: '#ffffff' }) }));
     const sgx = x + dx * 0.7 + (dz ? 0.9 : 0), sgz = z + dz * 0.7 + (dx ? 0.9 : 0);
     sg.position.set(sgx, 1.5, sgz); sg.rotation.y = Math.atan2(-dx, -dz) + Math.PI; s.add(sg);
     box(0.1, 1.5, 0.1, '#8a9096', sgx, 0.75, sgz, s);
@@ -133,8 +134,8 @@ export class WaterTaxi {
     this.pos = new THREE.Vector3();
     // 물보라 (작은 흰 상자들을 돌려 씀)
     this.wake = [];
-    const wm = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.8 });
-    for (let i = 0; i < 18; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.22), wm.clone()); w.visible = false; world.scene.add(w); this.wake.push({ m: w, t: 0 }); }
+    const wm = basic({ color: '#ffffff', transparent: true, opacity: 0.8 });
+    for (let i = 0; i < 18; i++) { const w = new THREE.Mesh(rbox(0.22, 0.05, 0.22), wm.clone()); w.visible = false; world.scene.add(w); this.wake.push({ m: w, t: 0 }); }
     this.wakeI = 0; this.wakeT = 0;
   }
   board(pier) {

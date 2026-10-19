@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from './toon.js';
 import { box } from './world.js';
 import { geo, T, ZN } from './seoulMap.js';
 import { signTexture } from './textures.js';
@@ -30,12 +31,12 @@ function entranceModel(name) {
   for (let i = 0; i < 6; i++) box(1.36, 0.06, 0.28, i % 2 ? '#7a7f86' : '#8a9096', 0, 0.04 - i * 0.002, 0.65 - i * 0.28, g).castShadow = false;
   box(1.36, 0.02, 0.6, dark, 0, 0.05, -0.62, g).castShadow = false;
   // 역 이름판 (지붕 앞)
-  const sign = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.36, 0.06), new THREE.MeshLambertMaterial({ map: signTexture(`${name}역`, { w: 96, h: 22, size: 13, bg: '#ffffff', fg: '#1f5f2a' }) }));
+  const sign = new THREE.Mesh(rbox(1.6, 0.36, 0.06), toonMat({ map: signTexture(`${name}역`, { w: 96, h: 22, size: 13, bg: '#ffffff', fg: '#1f5f2a' }) }));
   sign.position.set(0, 1.8, 1.0); g.add(sign);
   // 옆 기둥 표지 (초록 동그라미 2)
   const post = new THREE.Group(); post.position.set(1.15, 0, 0.95);
   box(0.08, 2.3, 0.08, '#8a9096', 0, 1.15, 0, post);
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 12), new THREE.MeshLambertMaterial({ map: signTexture('2', { w: 24, h: 24, size: 16, bg: LINE2, fg: '#ffffff' }) }));
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 12), toonMat({ map: signTexture('2', { w: 24, h: 24, size: 16, bg: LINE2, fg: '#ffffff' }) }));
   disc.rotation.x = Math.PI / 2; disc.position.y = 2.35; post.add(disc);
   g.add(post);
   g.traverse((o) => { if (o.isMesh && o.castShadow !== false) o.castShadow = true; });

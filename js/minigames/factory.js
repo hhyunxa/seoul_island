@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { signTexture, stripeTexture } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -65,13 +66,13 @@ export class FactoryGame extends MiniGame {
     box(18, 0.1, 10, '#9aa0a8', 0, -0.05, 0, s).receiveShadow = true;
     box(18, 5, 0.3, '#d6dce2', 0, 2.5, -4, s);
     for (let i = 0; i < 6; i++) box(1.8, 0.9, 0.05, '#8fb9d6', -6.5 + i * 2.6, 3.2, -3.83, s); // 창문
-    const stripe = new THREE.MeshLambertMaterial({ map: stripeTexture('#ffd23f', '#2a2a2e') }); stripe.map.repeat.set(18, 1);
-    const st = new THREE.Mesh(new THREE.BoxGeometry(16, 0.02, 0.3), stripe); st.position.set(0, 0.01, 1.2); s.add(st);
-    const sign = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.55, 0.06), new THREE.MeshLambertMaterial({ map: signTexture('G밸리 로봇 공장', { w: 128, h: 18, size: 12, bg: '#2f6fd8', fg: '#ffffff' }) }));
+    const stripe = toonMat({ map: stripeTexture('#ffd23f', '#2a2a2e') }); stripe.map.repeat.set(18, 1);
+    const st = new THREE.Mesh(rbox(16, 0.02, 0.3), stripe); st.position.set(0, 0.01, 1.2); s.add(st);
+    const sign = new THREE.Mesh(rbox(4.2, 0.55, 0.06), toonMat({ map: signTexture('G밸리 로봇 공장', { w: 128, h: 18, size: 12, bg: '#2f6fd8', fg: '#ffffff' }) }));
     sign.position.set(0, 4.3, -3.82); s.add(sign);
     // 컨베이어 벨트 (줄무늬가 흘러감)
-    const beltMat = new THREE.MeshLambertMaterial({ map: stripeTexture('#3a3f4a', '#4a505c') }); beltMat.map.repeat.set(28, 1); this.beltTex = beltMat.map;
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(BELT_X1 - BELT_X0 + 0.6, 0.12, 1.1), beltMat);
+    const beltMat = toonMat({ map: stripeTexture('#3a3f4a', '#4a505c') }); beltMat.map.repeat.set(28, 1); this.beltTex = beltMat.map;
+    const belt = new THREE.Mesh(rbox(BELT_X1 - BELT_X0 + 0.6, 0.12, 1.1), beltMat);
     belt.position.set((BELT_X0 + BELT_X1) / 2, BELT_Y - 0.06, BELT_Z); belt.receiveShadow = true; s.add(belt);
     box(BELT_X1 - BELT_X0 + 0.7, 0.5, 1.2, '#6b7280', (BELT_X0 + BELT_X1) / 2, 0.25, BELT_Z, s);
     for (const z of [BELT_Z - 0.6, BELT_Z + 0.6]) box(BELT_X1 - BELT_X0 + 0.7, 0.1, 0.06, '#ffd23f', (BELT_X0 + BELT_X1) / 2, BELT_Y + 0.02, z, s);
@@ -88,7 +89,7 @@ export class FactoryGame extends MiniGame {
       box(1.5, 0.12, 1.2, p.c, 0, 0.06, 0, g);
       for (const [w, d, x, z] of [[1.5, 0.1, 0, 0.55], [1.5, 0.1, 0, -0.55], [0.1, 1.2, 0.7, 0], [0.1, 1.2, -0.7, 0]]) box(w, 0.6, d, p.c, x, 0.36, z, g);
       box(1.3, 0.04, 1.0, '#2a2a2e', 0, 0.13, 0, g);
-      const lab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.45, 0.04), new THREE.MeshBasicMaterial({ map: signTexture(`${i + 1} ${p.name}`, { w: 84, h: 22, size: 12, bg: '#fff8e6' }) }));
+      const lab = new THREE.Mesh(rbox(1.4, 0.45, 0.04), new THREE.MeshBasicMaterial({ map: signTexture(`${i + 1} ${p.name}`, { w: 84, h: 22, size: 12, bg: '#fff8e6' }) }));
       lab.position.set(0, 0.55, 0.66); lab.rotation.x = -0.7; g.add(lab); // 카메라 쪽으로 기울임
       g.visible = i < 3; // 나사 상자는 나중에
       return g;

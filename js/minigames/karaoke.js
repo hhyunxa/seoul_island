@@ -122,8 +122,8 @@ export class KaraokeGame extends MiniGame {
   drawTV(title, line) {
     const g = this.tvCanvas.getContext('2d');
     g.fillStyle = '#0a1a3a'; g.fillRect(0, 0, 160, 90);
-    g.fillStyle = '#ffffff'; g.font = '700 11px Galmuri11'; g.textAlign = 'center'; g.fillText(title, 80, 22);
-    g.fillStyle = '#7ae8ff'; g.font = '700 14px Galmuri11'; g.fillText(line, 80, 55);
+    g.fillStyle = '#ffffff'; g.font = '11px Jua'; g.textAlign = 'center'; g.fillText(title, 80, 22);
+    g.fillStyle = '#7ae8ff'; g.font = '14px Jua'; g.fillText(line, 80, 55);
     if (this.notes && this.songT > 0) { g.fillStyle = '#333'; g.fillRect(20, 72, 120, 5); g.fillStyle = '#ff7ad9'; g.fillRect(20, 72, 120 * Math.min(1, this.songT / this.songLen), 5); }
     this.tvTex.needsUpdate = true;
   }

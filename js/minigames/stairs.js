@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox, toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { signTexture, canvasTexture, rng } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -80,20 +81,20 @@ export class StairsGame extends MiniGame {
       run++;
       this.stairs.push({ x: prev.x + dir * SX, y: i * SY, dir });
     }
-    const glass = new THREE.MeshLambertMaterial({ color: '#fff3c4', emissive: '#5a4210' });
+    const glass = toonMat({ color: '#fff3c4', emissive: '#5a4210' });
     this.stairs.forEach((st, i) => {
       if (i === TOP) { // 63층 전망대 발판
         box(2.6, 0.3, 1.4, GOLD, st.x, st.y - 0.15, 0, this.stairGroup);
         for (const dx of [-1.25, 1.25]) box(0.08, 0.6, 0.08, '#ffffff', st.x + dx, st.y + 0.3, 0.6, this.stairGroup);
         box(2.6, 0.06, 0.06, '#ffffff', st.x, st.y + 0.6, 0.6, this.stairGroup);
-        const sg = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.06), new THREE.MeshBasicMaterial({ map: signTexture('63 전망대', { w: 80, h: 20, size: 12, bg: '#fff8e6' }) }));
+        const sg = new THREE.Mesh(rbox(1.8, 0.45, 0.06), new THREE.MeshBasicMaterial({ map: signTexture('63 전망대', { w: 80, h: 20, size: 12, bg: '#fff8e6' }) }));
         sg.position.set(st.x, st.y + 2.0, -1.35); this.stairGroup.add(sg);
         return;
       }
       box(1.1, 0.16, 1.0, i === 0 ? '#c9c4b8' : STEP, st.x, st.y - 0.08, 0, this.stairGroup);
       if (i > 0) box(1.12, 0.04, 1.02, glass, st.x, st.y + 0.005, 0, this.stairGroup);
       if (i > 0 && i % 10 === 0) { // 10층마다 층 표시
-        const sg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.4, 0.05), new THREE.MeshBasicMaterial({ map: signTexture(`${i}F`, { w: 40, h: 18, size: 12, bg: '#2a2a2e', fg: '#ffe14f' }) }));
+        const sg = new THREE.Mesh(rbox(0.9, 0.4, 0.05), new THREE.MeshBasicMaterial({ map: signTexture(`${i}F`, { w: 40, h: 18, size: 12, bg: '#2a2a2e', fg: '#ffe14f' }) }));
         sg.position.set(st.x, st.y + 1.0, -1.35); this.stairGroup.add(sg);
       }
     });

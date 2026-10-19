@@ -123,12 +123,12 @@ export class HandInput {
     const f = this.flash && now - this.flash.t < 450 ? this.flash.text : null;
     if (f) {
       g.strokeStyle = '#6fdc4a'; g.lineWidth = 8; g.strokeRect(0, 0, W, H);
-      g.font = '700 22px Galmuri11, monospace'; g.lineWidth = 5; g.strokeStyle = '#3f1d0b';
+      g.font = '22px Jua, monospace'; g.lineWidth = 5; g.strokeStyle = '#3f1d0b';
       g.strokeText(f, W / 2, H / 2); g.fillStyle = '#fff'; g.fillText(f, W / 2, H / 2);
     }
     const n = this.fresh.length;
     g.fillStyle = 'rgba(63,29,11,.75)'; g.fillRect(0, H - 24, W, 24);
-    g.fillStyle = '#fff'; g.font = '700 13px Galmuri11, monospace';
+    g.fillStyle = '#fff'; g.font = '13px Jua, monospace';
     g.fillText(n ? this.label || `손 ${n}개 보임` : '손이 화면에 보이게 해 주세요 ✋', W / 2, H - 7);
   }
 }

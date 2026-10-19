@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { toonMat } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { plankTexture } from '../textures.js';
@@ -42,7 +43,7 @@ export class ConductorGame extends MiniGame {
     this.lights({ pos: [-3, 12, 8], size: 10, intensity: 1.7 });
     // 객석 바닥 + 무대 + 뒷벽 + 파이프오르간 + 빨간 커튼
     box(20, 0.1, 12, '#2a1f30', 0, -0.05, 4, s).receiveShadow = true;
-    const plank = new THREE.MeshLambertMaterial({ map: plankTexture('#b5763b', '#8a5428', '#cf9150') });
+    const plank = toonMat({ map: plankTexture('#b5763b', '#8a5428', '#cf9150') });
     plank.map.repeat.set(8, 4);
     box(12, STAGE_Y, 7, plank, 0, STAGE_Y / 2, -2.5, s).receiveShadow = true;
     box(12, 7, 0.3, '#3a2a3a', 0, 3.5, -6, s);

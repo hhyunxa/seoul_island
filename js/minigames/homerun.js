@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox } from '../toon.js';
 import { box } from '../world.js';
 import { Avatar } from '../character.js';
 import { signTexture } from '../textures.js';
@@ -49,7 +50,7 @@ export class HomerunGame extends MiniGame {
       box(1.6, 0.9, 1, row % 2 ? '#3a3f4a' : '#4a5060', -20 + i * 1.6, 1.8 + row * 0.9, -33.5 - row * 1, s);
       if ((i + row) % 2 === 0) box(0.4, 0.4, 0.3, crowd[(i * 3 + row) % crowd.length], -20 + i * 1.6, 2.45 + row * 0.9, -33.1 - row * 1, s);
     }
-    const sb = new THREE.Mesh(new THREE.BoxGeometry(8, 2.2, 0.3), new THREE.MeshBasicMaterial({ map: signTexture('잠실 홈런 더비', { w: 128, h: 36, size: 15, bg: '#1a2a1a', fg: '#ffe14f' }) }));
+    const sb = new THREE.Mesh(rbox(8, 2.2, 0.3), new THREE.MeshBasicMaterial({ map: signTexture('잠실 홈런 더비', { w: 128, h: 36, size: 15, bg: '#1a2a1a', fg: '#ffe14f' }) }));
     sb.position.set(0, 7.6, -37); s.add(sb);
     box(8.4, 2.6, 0.2, '#2a2a2e', 0, 7.6, -37.2, s); box(0.4, 6.5, 0.4, '#555', 0, 3.25, -37.3, s);
     for (const x of [-18, 18]) { box(0.4, 12, 0.4, '#d8d4cc', x, 6, -30, s); box(3, 1.2, 0.3, new THREE.MeshBasicMaterial({ color: '#fff6c8' }), x, 12.2, -30, s); }

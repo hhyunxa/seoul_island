@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rbox } from '../toon.js';
 import { box } from '../world.js';
 import { signTexture } from '../textures.js';
 import { sfx } from '../sfx.js';
@@ -65,15 +66,15 @@ export class ClawGame extends MiniGame {
     box(3.6, 0.02, 2.0, '#ffd8ec', 0, 0.51, 0, s);
     for (const x of [-1.9, 1.9]) for (const z of [-1.1, 1.1]) box(0.12, 3.4, 0.12, '#ffffff', x, 2.2, z, s);
     box(3.95, 0.45, 2.35, '#ff6ec7', 0, 4.1, 0, s);
-    const sign = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.38, 0.05), new THREE.MeshBasicMaterial({ map: signTexture('인형뽑기', { w: 96, h: 16, size: 12, bg: '#2a1036', fg: '#ffe14f' }) }));
+    const sign = new THREE.Mesh(rbox(2.6, 0.38, 0.05), new THREE.MeshBasicMaterial({ map: signTexture('인형뽑기', { w: 96, h: 16, size: 12, bg: '#2a1036', fg: '#ffe14f' }) }));
     sign.position.set(0, 4.1, 1.2); s.add(sign);
     // 유리 (살짝 비치게)
     const glass = new THREE.MeshBasicMaterial({ color: '#bfe9ff', transparent: true, opacity: 0.12, depthWrite: false });
-    for (const [w, d, x, z] of [[3.8, 0.02, 0, 1.1], [3.8, 0.02, 0, -1.1], [0.02, 2.2, -1.9, 0], [0.02, 2.2, 1.9, 0]]) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 3.35, d), glass); m.position.set(x, 2.2, z); s.add(m); }
+    for (const [w, d, x, z] of [[3.8, 0.02, 0, 1.1], [3.8, 0.02, 0, -1.1], [0.02, 2.2, -1.9, 0], [0.02, 2.2, 1.9, 0]]) { const m = new THREE.Mesh(rbox(w, 3.35, d), glass); m.position.set(x, 2.2, z); s.add(m); }
     // 배출구 (투명 칸막이 + 어두운 구멍)
     box(0.8, 0.03, 0.8, '#1a1420', CHUTE.x, 0.53, CHUTE.z, s);
     const acr = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false });
-    for (const [w, d, x, z] of [[0.82, 0.03, 0, -0.4], [0.03, 0.82, 0.4, 0]]) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.5, d), acr); m.position.set(CHUTE.x + x, 0.78, CHUTE.z + z); s.add(m); }
+    for (const [w, d, x, z] of [[0.82, 0.03, 0, -0.4], [0.03, 0.82, 0.4, 0]]) { const m = new THREE.Mesh(rbox(w, 0.5, d), acr); m.position.set(CHUTE.x + x, 0.78, CHUTE.z + z); s.add(m); }
     box(0.7, 0.3, 0.06, '#1a1420', CHUTE.x, 0.25, 1.16, s); // 받는 곳 뚜껑
     // 레일 + 집게
     box(3.7, 0.08, 0.12, '#c9ced6', 0, 3.75, -0.95, s); box(3.7, 0.08, 0.12, '#c9ced6', 0, 3.75, 0.95, s);
