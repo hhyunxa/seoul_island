@@ -730,4 +730,4 @@ frame();
 // 디버그/테스트용
 window.__game = { setMode, world, renderer, camera, cam, setTime(h) { gameMinutes = h * 60; }, dayNight, taxi, get player() { return player; }, get mini() { return mini; }, save, games, getGame,
   enter(id) { miniEntry = world.interactables.find((i) => i.game === id); mini = getGame(id); setMode('mini'); },
-  warp(x, z) { player.position.set(x, 0, z); snapCamera(); } };
+  warp(x, z) { player.position.set(x, 0, z); snapCamera(); }, U };
