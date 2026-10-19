@@ -35,7 +35,7 @@ export function soft(c, out = new THREE.Color()) {
     if (s < 0.12) { h = 0.07; s = 0.3; }
   } else {
     s = Math.min(1, s * 1.1 + (s > 0.08 ? 0.03 : 0));
-    l = Math.min(l, 0.88);
+    if (s > 0.2) l = Math.min(l, 0.88); // 흰색·회색은 그대로 밝게
   }
   return out.setHSL(h, s, l, THREE.SRGBColorSpace);
 }

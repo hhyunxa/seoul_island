@@ -103,6 +103,20 @@ function transition(fn) {
   setTimeout(() => { fn(); setTimeout(() => f.classList.remove('on'), 60); }, 380);
 }
 
+// 꾸미기 화면: 캐릭터와 카메라 사이를 가리는 것(역 입구·표지판)이 없는 방향을 고름 (남쪽부터)
+let makeYaw = 0;
+function pickMakeYaw() {
+  const p = world.spawn;
+  for (let i = 0; i < 32; i++) {
+    const a = (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.2;
+    let clear = true;
+    for (let d = 0.8; d <= 5.6 && clear; d += 0.4) if (!world.canWalk(p.x + Math.sin(a) * d, p.z + Math.cos(a) * d, 0.5)) clear = false;
+    if (clear) return a;
+  }
+  return 0;
+}
+makeYaw = pickMakeYaw();
+
 function rebuildPlayer() {
   const pos = player ? player.position.clone() : world.spawn.clone();
   const ry = player ? player.rotation.y : 0;
@@ -123,6 +137,7 @@ function setMode(m) {
   $('countdown').classList.add('hidden');
   closeDialog();
   U.uCurve.value = m === 'mini' ? 0 : WORLD_CURVE;
+  if (m === 'mini') U.stOn.value = 0; // 월드의 '가리면 뚫어 보이기'가 미니게임 무대에 남지 않게
   if (m === 'make') { player?.position.copy(world.spawn); refreshMake(); }
   if (m === 'world') {
     if (prev === 'make') rebuildPlayer();
@@ -685,10 +700,11 @@ function frame(ts) {
   if (mode === 'make') {
     // 꾸미기: 광화문광장에서 내 캐릭터를 앞에서 보여 줌 (화면 오른쪽)
     const p = player.position;
-    const a = Math.sin(t * 0.4) * 0.6;
-    camera.position.set(p.x + Math.sin(a) * 5.2 - 1.6, 2.4, p.z + Math.cos(a) * 5.2);
-    camera.lookAt(p.x - 1.6, 0.9, p.z);
-    avatar.animate(dt, t, { wave: Math.floor(t / 3) % 2 === 0, yaw: 0 });
+    const a = makeYaw + Math.sin(t * 0.4) * 0.35;
+    const sx = Math.cos(makeYaw) * 1.6, sz = -Math.sin(makeYaw) * 1.6; // 화면 오른쪽에 보이게 (왼쪽엔 꾸미기 판)
+    camera.position.set(p.x + Math.sin(a) * 5.2 - sx, 2.4, p.z + Math.cos(a) * 5.2 - sz);
+    camera.lookAt(p.x - sx, 0.9, p.z - sz);
+    avatar.animate(dt, t, { wave: Math.floor(t / 3) % 2 === 0, yaw: makeYaw });
     world.update(dt, t, null);
     dayNight.update(gameMinutes / 60, t, camera.position);
     world.followSun(p);
