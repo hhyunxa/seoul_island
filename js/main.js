@@ -30,7 +30,7 @@ const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 400);
 
 await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]);
 await document.fonts.load('20px Jua').catch(() => {});
-await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30))); // "불러오는 중"이 먼저 보이게
+await new Promise((r) => setTimeout(r, 50)); // "불러오는 중"이 먼저 보이게 (탭이 가려져 있어도 멈추지 않게 rAF 대신 타이머)
 const world = new World();
 const dayNight = new DayNight(world);
 buildSubway(world);

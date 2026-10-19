@@ -19,7 +19,7 @@ export const WORLD_CURVE = 0.0016;
 let GRAD = null;
 export function gradientMap() {
   if (GRAD) return GRAD;
-  GRAD = new THREE.DataTexture(new Uint8Array([140, 205, 255]), 3, 1, THREE.RedFormat);
+  GRAD = new THREE.DataTexture(new Uint8Array([115, 190, 255]), 3, 1, THREE.RedFormat);
   GRAD.minFilter = GRAD.magFilter = THREE.NearestFilter; GRAD.generateMipmaps = false; GRAD.needsUpdate = true;
   return GRAD;
 }
@@ -34,8 +34,8 @@ export function soft(c, out = new THREE.Color()) {
     s = Math.min(s, 0.4); l = 0.07 + l * 0.75;
     if (s < 0.12) { h = 0.07; s = 0.3; }
   } else {
-    s = Math.min(1, s * 0.8 + (s > 0.08 ? 0.05 : 0));
-    l = l + (0.93 - l) * 0.2;
+    s = Math.min(1, s * 0.96 + (s > 0.08 ? 0.03 : 0));
+    l = l + (0.9 - l) * 0.07;
   }
   return out.setHSL(h, s, l, THREE.SRGBColorSpace);
 }

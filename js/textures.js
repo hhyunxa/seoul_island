@@ -30,13 +30,13 @@ function rrect(ctx, x, y, w, h, r) {
 
 // 바닥 색 (원래 서울섬 낮 팔레트)
 export const GROUND = {
-  grass: '#b8e39a', grassLt: '#c9eeb0', grassDk: '#9fd17f',
-  sand: '#fff1d0', sandDk: '#f3e0b6',
-  path: '#fbe8c8', pathDk: '#efd6ac',
-  soil: '#d9a77c', soilDk: '#c48e63',
-  plaza: '#fff6e6', plazaLine: 'rgba(255,170,190,0.38)',
-  road: '#e9e1d6', roadDk: '#d8cfc2',
-  bed: '#e8cfa0', forest: '#a6d88e',
+  grass: '#8fd264', grassLt: '#a8e07f', grassDk: '#6fb84c',
+  sand: '#fbe1a8', sandDk: '#efcb88',
+  path: '#f1d29c', pathDk: '#e0b97a',
+  soil: '#c98a5a', soilDk: '#a86d42',
+  plaza: '#fbeedb', plazaLine: 'rgba(255,120,150,0.42)',
+  road: '#e2d6c4', roadDk: '#cdbfa9',
+  bed: '#e0bf86', forest: '#6dbd55',
 };
 
 // 16×16 바닥 조각 (미니게임 바닥 tileGround · 달리기 모래)
@@ -73,7 +73,7 @@ export function dirtSideTexture() {
 export function waterTexture() {
   const [c, ctx] = makeCanvas(128, 128);
   const r = rng(3);
-  ctx.fillStyle = '#8fd8e8'; ctx.fillRect(0, 0, 128, 128);
+  ctx.fillStyle = '#5fc4e0'; ctx.fillRect(0, 0, 128, 128);
   ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
   for (let i = 0; i < 9; i++) { const x = r() * 100, y = 6 + r() * 116; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 10 + r() * 18, y); ctx.stroke(); }
   return canvasTexture(c, true);

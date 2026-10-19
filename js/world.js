@@ -41,7 +41,7 @@ export function makeTree(r, kind = 'round', fruitColor = '#ff6b6b') {
       const m = new THREE.Mesh(GS.cone ||= new THREE.ConeGeometry(1, 1, 12), mat(c)); m.scale.set(rad, h, rad); m.position.y = y; m.castShadow = true; crown.add(m);
     });
   } else {
-    const cols = kind === 'fruit' ? ['#7fcb98', '#6bba86', '#bfeccc'] : r() < 0.35 ? ['#ffb7c8', '#ffa3b9', '#ffe3ea'] : ['#7fcb98', '#6bba86', '#bfeccc'];
+    const cols = kind === 'fruit' ? ['#55b86e', '#46a35e', '#8fd89e'] : r() < 0.35 ? ['#ff9fb8', '#ff86a4', '#ffd0dc'] : ['#55b86e', '#46a35e', '#8fd89e'];
     sph(1.25, cols[0], 0, 0.85, 0, crown, 1, 0.95, 1);
     sph(0.9, cols[1], 0.75, 0.45, 0.35, crown);
     sph(0.85, cols[1], -0.7, 0.55, -0.3, crown);
@@ -118,7 +118,7 @@ export class World {
   constructor() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#bfe6f7');
-    this.scene.fog = new THREE.Fog('#e2f4fb', 55, 140);
+    this.scene.fog = new THREE.Fog('#e2f4fb', 75, 165);
     this.r = rng(2026);
     this.colliders = [];
     this.cgrid = new Map();
@@ -180,14 +180,14 @@ export class World {
 
   // ---------- 빛 (그림자 맵 대신 동그란 그림자) ----------
   buildLights() {
-    this.hemi = new THREE.HemisphereLight('#ffffff', '#9ccf7a', 2.6);
+    this.hemi = new THREE.HemisphereLight('#ffffff', '#7fb860', 2.1);
     this.scene.add(this.hemi);
     const sun = new THREE.DirectionalLight('#fff1d6', 1.9);
     sun.position.set(30, 50, 25);
     this.scene.add(sun, sun.target);
     this.sun = sun;
     this.sunOffset = sun.position.clone();
-    this.amb = new THREE.AmbientLight('#ffffff', 0.35);
+    this.amb = new THREE.AmbientLight('#ffffff', 0.2);
     this.scene.add(this.amb);
   }
   followSun(p) {
@@ -247,7 +247,7 @@ export class World {
     };
     const PT = {
       grass: pattern(GROUND.grass, grassStroke),
-      forest: pattern(GROUND.forest, (g) => { blobs('#b8e39a', 0.5, 5, 9, 5)(g); g.strokeStyle = '#8cc77a'; g.lineWidth = 1.6; for (let i = 0; i < 8; i++) { const x = 4 + r() * 56, y = 4 + r() * 54; g.beginPath(); g.moveTo(x - 2, y); g.lineTo(x - 0.7, y + 3.5); g.moveTo(x + 2, y); g.lineTo(x + 0.7, y + 3.5); g.stroke(); } }),
+      forest: pattern(GROUND.forest, (g) => { blobs('#86cc68', 0.5, 5, 9, 5)(g); g.strokeStyle = '#55a23f'; g.lineWidth = 1.6; for (let i = 0; i < 8; i++) { const x = 4 + r() * 56, y = 4 + r() * 54; g.beginPath(); g.moveTo(x - 2, y); g.lineTo(x - 0.7, y + 3.5); g.moveTo(x + 2, y); g.lineTo(x + 0.7, y + 3.5); g.stroke(); } }),
       sand: pattern(GROUND.sand, blobs(GROUND.sandDk, 0.5, 6, 5, 3)),
       path: pattern(GROUND.path, blobs(GROUND.pathDk, 0.6, 5, 6, 4)),
       plaza: pattern(GROUND.plaza, (g) => { g.fillStyle = GROUND.plazaLine; for (let i = 0; i < 4; i++) { g.fillRect(i * 16, 0, 8, 64); g.fillRect(0, i * 16, 64, 8); } }),
@@ -291,9 +291,9 @@ export class World {
       this.scene.add(mesh);
       return mesh;
     };
-    ring(1, 0.2, '#fff1d0', -0.1);
-    ring(2, 0.1, '#ffffff', -0.22);
-    this.shallow = ring(4, 0.04, '#b9ebf2', -0.4);
+    ring(1, 0.32, '#fbe1a8', -0.1);
+    ring(1, 0.14, '#ffffff', -0.22);
+    this.shallow = ring(2, 0.1, '#8fdcec', -0.4);
   }
 
   buildWater() {
@@ -581,8 +581,8 @@ export class World {
     c.width = NX; c.height = NZ;
     const ctx = c.getContext('2d'), img = ctx.createImageData(NX, NZ);
     const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-    const col = { [T.GRASS]: hex('#b8e39a'), [T.SAND]: hex('#fff1d0'), [T.PATH]: hex('#fbe8c8'), [T.SOIL]: hex('#e0b58c'), [T.PLAZA]: hex('#fff6e6'), [T.BRIDGE]: hex('#fff8ec'), [T.ROAD]: hex('#fbe8c8') };
-    const sea = hex('#8fd8e8'), river = hex('#9fe0ee'), forest = hex('#9fd17f'), lm = hex('#ffd1dc');
+    const col = { [T.GRASS]: hex('#8fd264'), [T.SAND]: hex('#fbe1a8'), [T.PATH]: hex('#f1d29c'), [T.SOIL]: hex('#e0b58c'), [T.PLAZA]: hex('#fff6e6'), [T.BRIDGE]: hex('#fff8ec'), [T.ROAD]: hex('#f1d29c') };
+    const sea = hex('#5fc4e0'), river = hex('#74cde6'), forest = hex('#6dbd55'), lm = hex('#ffd1dc');
     for (let k = 0; k < NX * NZ; k++) {
       const t = m.tile[k];
       let cc = t === T.WATER ? (m.wk[k] === WK.OUT ? sea : river) : col[t];
