@@ -269,7 +269,7 @@
   --font: 'Jua', sans-serif; --weight: 400; --accent: #F2A73B; --accentFg: #FFFFFF; --areaBg: #DCF1FA; --areaFg: #23607A;
   --bubble: 46% 54% 50% 50% / 60% 60% 40% 40%;
   --green: #7FCB98; --greenDk: #5FAE7A; --pink: #FF8FA3; --chip: #FFF3D6;
-  --mm-sea: #5FC4E0; --mm-me: #F2A73B;
+  --mm-sea: #36B2E0; --mm-me: #F2A73B;
 }
 body.dusk {
   --bg: #F2B59A; --panel: #FBF3E4; --fg: #3A3150; --sub: #6E5F96; --shadow: rgba(30,22,48,.35);

@@ -102,7 +102,7 @@ export function vcMat() { return (VC ||= toonMat({ vertexColors: true })); }
 // ---------- 나무 (원래 서울섬 동글동글 나무, 인스턴싱) ----------
 //  round: 초록 뭉게 나무 · maple: 벚꽃 나무 · ginkgo: 노란 은행나무 · pine: 고깔 소나무
 const TREE_COLS = {
-  round: ['#55b86e', '#46a35e', '#8fd89e'], maple: ['#ff9fb8', '#ff86a4', '#ffd0dc'], ginkgo: ['#ffcc4d', '#f2b632', '#ffe28a'],
+  round: ['#38a852', '#2c9346', '#6acb80'], maple: ['#ff7ea2', '#ff638e', '#ffb6ca'], ginkgo: ['#ffbd1a', '#f0a000', '#ffd650'],
 };
 // 나무는 수천 그루라 정점 수를 아끼려고 인덱스 지오메트리를 그대로 합침
 const treeCache = {};
@@ -119,7 +119,7 @@ function treeGeometry(kind) {
   };
   part(new THREE.CylinderGeometry(0.2, 0.28, 1, 8, 1), '#b58965', 0, 0.7, 0, 1, 1.4, 1);
   if (kind === 'pine') {
-    const c = ['#3f9a5e', '#4fae6c', '#6cc484'], cg = new THREE.ConeGeometry(1, 1, 10, 1);
+    const c = ['#2a8748', '#35a058', '#4fb86c'], cg = new THREE.ConeGeometry(1, 1, 10, 1);
     [[1.3, 1.5, 1.7], [1.0, 1.3, 2.5], [0.7, 1.1, 3.2]].forEach(([r, h, y], i) => part(cg, c[i], 0, y, 0, r, h, r));
   } else {
     const [a, b, hi] = TREE_COLS[kind] || TREE_COLS.round, sg = new THREE.SphereGeometry(1, 12, 8);
