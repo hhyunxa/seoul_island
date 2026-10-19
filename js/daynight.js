@@ -1,86 +1,107 @@
 import * as THREE from 'three';
-import { ST } from './city.js';
+import { U } from './toon.js';
 
 // ============================================================
-//  하루의 흐름: 시계(게임 시간)에 맞춰 하늘·햇빛·안개·밤 불빛이 바뀜
-//  새벽(보라) → 해돋이(주황) → 낮 → 늦은 오후(황금빛) → 노을 → 해질녘 → 밤(별·달)
+//  하루의 흐름 (실제 7초 = 게임 10분)
+//  낮은 원래 서울섬 '낮 12:30', 해 질 녘은 원래 서울섬 '노을 6:40' 그대로:
+//   하늘: 보라 → 분홍 → 살구 그라데이션 + 큰 해 + 분홍 구름 줄 (화면에 고정된 그림, 원래처럼)
+//   빛: 복숭아빛 하늘광 + 낮게 깔리는 주황 햇빛 + 보랏빛 그늘, 살구색 안개
+//   땅 색: 잔디는 올리브·황금빛, 물은 연보라 (toon.js의 uDusk 색 보정)
+//  밤은 노을 팔레트를 그대로 어둡게 (별·달, 가로등 불빛)
 // ============================================================
-// [시각, 하늘 위, 지평선, 반구광 하늘, 반구광 땅, 반구광 세기, 해/달빛 색, 해/달빛 세기, 밤 정도]
+// [시각, 안개(지평선), 하늘광, 땅광, 세기, 햇빛 색, 햇빛 세기, 그늘(환경광) 색, 환경광 세기, 노을, 밤]
 const KEYS = [
-  // 서울섬 팔레트: 낮은 하늘색 그라데이션, 노을은 보라→분홍→살구, 밤은 깊은 보라
-  [0.0, '#2a2458', '#4a3f80', '#8a80c8', '#3a3158', 1.2, '#b8b0ff', 0.6, 1],
-  [4.3, '#2a2458', '#4a3f80', '#8a80c8', '#3a3158', 1.2, '#b8b0ff', 0.6, 1],
-  [5.0, '#3b3478', '#6a5fa8', '#9a90d0', '#4a4068', 1.35, '#c0b8ff', 0.7, 0.85],
-  [5.8, '#6a7cc0', '#d8c0e0', '#d0d0f0', '#6a7060', 1.8, '#ffe0e8', 1.0, 0.4],
-  [6.5, '#8ab8e8', '#ffe2d0', '#f0f0ff', '#8ab070', 2.3, '#ffe9d6', 1.5, 0.08],
-  [7.5, '#4fb3ea', '#cbe9f7', '#ffffff', '#6aa84a', 1.8, '#fff1d6', 2.2, 0],
-  [12, '#4fb3ea', '#cbe9f7', '#ffffff', '#6aa84a', 1.8, '#fff1d6', 2.2, 0],
-  [16, '#52aee8', '#d6eaf0', '#ffffff', '#6aa84a', 1.75, '#ffeacc', 2.15, 0],
-  [17.5, '#8aa8e0', '#ffd7ab', '#fff0e0', '#a8b070', 2.3, '#ffc89a', 1.7, 0],
-  [18.6, '#7a6bb5', '#ffc59c', '#ffd9c0', '#5b4a78', 1.95, '#ffb98a', 1.5, 0.15],
-  [19.5, '#4a3f88', '#c88aa8', '#b0a0d8', '#3a3158', 1.5, '#d0a8ff', 0.9, 0.7],
-  [20.8, '#2e2860', '#4f4488', '#8a80c8', '#3a3158', 1.25, '#b8b0ff', 0.65, 1],
-  [24, '#2a2458', '#4a3f80', '#8a80c8', '#3a3158', 1.2, '#b8b0ff', 0.6, 1],
-].map(([h, ...v]) => ({ h, top: new THREE.Color(v[0]), hor: new THREE.Color(v[1]), hs: new THREE.Color(v[2]), hg: new THREE.Color(v[3]), hi: v[4], lc: new THREE.Color(v[5]), li: v[6], night: v[7] }));
+  [0.0, '#4a3f78', '#8a80c8', '#2a2448', 1.0, '#b8b0ff', 0.55, '#3a3060', 0.35, 1, 1],
+  [4.6, '#4a3f78', '#8a80c8', '#2a2448', 1.0, '#b8b0ff', 0.55, '#3a3060', 0.35, 1, 1],
+  [5.4, '#8a74a8', '#b8a8d8', '#3a3158', 1.35, '#d8b8ff', 0.9, '#5a4a80', 0.35, 1, 0.65],
+  [6.1, '#ffcfa6', '#ffd9c0', '#5b4a78', 1.9, '#ffb98a', 1.9, '#6a5a90', 0.4, 0.9, 0.1],
+  [7.2, '#e2f4fb', '#ffffff', '#6aa84a', 1.8, '#fff1d6', 2.2, '#ffffff', 0.1, 0, 0],
+  [16.6, '#e2f4fb', '#ffffff', '#6aa84a', 1.8, '#fff1d6', 2.2, '#ffffff', 0.1, 0, 0],
+  [17.7, '#ffe2c0', '#ffeedd', '#7a8a58', 1.85, '#ffd2a0', 2.4, '#b8a8c8', 0.2, 0.55, 0],
+  [18.4, '#ffcfa6', '#ffd9c0', '#5b4a78', 1.95, '#ffb98a', 2.8, '#6a5a90', 0.55, 1, 0],
+  [19.3, '#e8b0a0', '#e8c0c0', '#4a3c6a', 1.6, '#ff9f80', 1.8, '#5a4a80', 0.5, 1, 0.35],
+  [20.4, '#4a3f78', '#8a80c8', '#2a2448', 1.0, '#b8b0ff', 0.55, '#3a3060', 0.35, 1, 1],
+  [24, '#4a3f78', '#8a80c8', '#2a2448', 1.0, '#b8b0ff', 0.55, '#3a3060', 0.35, 1, 1],
+].map(([h, ...v]) => ({ h, hor: new THREE.Color(v[0]), hs: new THREE.Color(v[1]), hg: new THREE.Color(v[2]), hi: v[3], lc: new THREE.Color(v[4]), li: v[5], ac: new THREE.Color(v[6]), ai: v[7], dusk: v[8], night: v[9] }));
 
 const SUNRISE = 6, SUNSET = 19;
 
-const skyVert = `varying vec3 vDir; void main() { vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-const skyFrag = `
-uniform vec3 top, hor, sunDir, moonDir, sunCol; uniform float stars, sunVis, moonVis, time;
-varying vec3 vDir;
-float hash(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
-void main() {
-  vec3 d = normalize(vDir);
-  float y = d.y;
-  vec3 col = mix(hor, top, smoothstep(-0.02, 0.55, y));
-  // 해: 주변 번짐 + 네모난 도트 원반
-  float sg = max(dot(d, sunDir), 0.0);
-  col += sunCol * (pow(sg, 24.0) * 0.45 + pow(sg, 6.0) * 0.18) * sunVis;
-  col = mix(col, vec3(1.0, 0.97, 0.86), smoothstep(0.9972, 0.9982, sg) * sunVis);
-  // 달
-  float mg = dot(d, moonDir);
-  col = mix(col, vec3(1.0, 0.94, 0.78), smoothstep(0.9984, 0.9991, mg) * moonVis);
-  col += vec3(0.5, 0.55, 0.8) * pow(max(mg, 0.0), 80.0) * 0.25 * moonVis;
-  // 별 (방향을 격자로 나눠서 일부 칸만 반짝)
-  if (stars > 0.01 && y > 0.02) {
-    vec3 q = floor(d * 150.0);
-    float h = hash(q);
-    if (h > 0.993) col += vec3(0.9, 0.92, 1.0) * stars * (0.55 + 0.45 * sin(time * 2.0 + h * 90.0)) * smoothstep(0.02, 0.2, y);
+// ---------- 하늘 그림 (원래 서울섬 배경 그대로, 1024×576을 절반 크기로) ----------
+const SW = 512, SH = 288, S = 0.5;
+function skyLayer(kind) {
+  const c = document.createElement('canvas'); c.width = SW; c.height = SH;
+  const g = c.getContext('2d');
+  g.scale(S, S);
+  const w = SW / S, h = SH / S;
+  const stops = {
+    day: [[0, '#6fc0ec'], [0.5, '#a9dcf4'], [1, '#d6eef8']],
+    dusk: [[0, '#7A6BB5'], [0.42, '#E59FA8'], [0.78, '#FFC59C'], [1, '#FFD7AB']],
+    night: [[0, '#1e1a44'], [0.5, '#3a3170'], [1, '#6a5aa0']],
+  }[kind];
+  const gr = g.createLinearGradient(0, 0, 0, h * 0.55);
+  stops.forEach((st) => gr.addColorStop(st[0], st[1]));
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  if (kind === 'day') {
+    g.fillStyle = 'rgba(255,255,255,0.92)';
+    [[150, 62, 1], [470, 44, 1.2], [760, 84, 0.95], [940, 36, 0.7], [320, 120, 0.6]].forEach((cl) => {
+      [[0, 0, 26], [26, -12, 32], [58, 0, 26], [30, 10, 26]].forEach((p) => { g.beginPath(); g.arc(cl[0] + p[0] * cl[2], cl[1] + p[1] * cl[2], p[2] * cl[2], 0, Math.PI * 2); g.fill(); });
+    });
+  } else if (kind === 'dusk') {
+    const sg = g.createRadialGradient(230, 110, 10, 230, 110, 210);
+    sg.addColorStop(0, 'rgba(255,240,200,0.95)'); sg.addColorStop(0.25, 'rgba(255,214,160,0.55)'); sg.addColorStop(1, 'rgba(255,200,160,0)');
+    g.fillStyle = sg; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#FFEBC0'; g.beginPath(); g.arc(230, 110, 34, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,175,165,0.55)';
+    [[620, 66, 170, 13], [820, 110, 120, 9], [430, 34, 110, 8], [920, 52, 90, 7]].forEach((cl) => { g.beginPath(); g.ellipse(cl[0], cl[1], cl[2], cl[3], 0, 0, Math.PI * 2); g.fill(); });
+  } else {
+    let a = 7; const r = () => ((a = (a * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(255,250,235,${0.4 + r() * 0.6})`; g.beginPath(); g.arc(r() * w, r() * h * 0.5, 1 + r() * 2.2, 0, 7); g.fill(); }
+    const mg = g.createRadialGradient(790, 96, 6, 790, 96, 90);
+    mg.addColorStop(0, 'rgba(255,240,210,0.6)'); mg.addColorStop(1, 'rgba(255,240,210,0)');
+    g.fillStyle = mg; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#FFF1CF'; g.beginPath(); g.arc(790, 96, 26, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(200,175,230,0.35)';
+    [[560, 70, 150, 10], [300, 120, 110, 8]].forEach((cl) => { g.beginPath(); g.ellipse(cl[0], cl[1], cl[2], cl[3], 0, 0, Math.PI * 2); g.fill(); });
   }
-  gl_FragColor = vec4(col, 1.0);
-  #include <colorspace_fragment>
-}`;
+  return c;
+}
 
 export class DayNight {
   constructor(world) {
     this.world = world;
-    this.u = {
-      top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, sunCol: { value: new THREE.Color('#ffb070') },
-      sunDir: { value: new THREE.Vector3(0, 1, 0) }, moonDir: { value: new THREE.Vector3(0, -1, 0) },
-      stars: { value: 0 }, sunVis: { value: 1 }, moonVis: { value: 0 }, time: { value: 0 },
-    };
-    this.dome = new THREE.Mesh(new THREE.SphereGeometry(200, 24, 12), new THREE.ShaderMaterial({ uniforms: this.u, vertexShader: skyVert, fragmentShader: skyFrag, side: THREE.BackSide, depthWrite: false, fog: false }));
-    this.dome.renderOrder = -1; this.dome.frustumCulled = false;
-    world.scene.add(this.dome);
-    world.scene.background = null;
-    this._a = {}; this.hour = -1;
+    this.layers = { day: skyLayer('day'), dusk: skyLayer('dusk'), night: skyLayer('night') };
+    this.sky = document.createElement('canvas'); this.sky.width = SW; this.sky.height = SH;
+    this.skyTex = new THREE.CanvasTexture(this.sky); this.skyTex.colorSpace = THREE.SRGBColorSpace;
+    world.scene.background = this.skyTex;
+    this._a = {}; this.lastKey = '';
   }
 
-  // 시각(0~24, 소수)에서 두 키프레임 사이를 섞음
   sample(h) {
     let i = 0;
     while (i < KEYS.length - 2 && KEYS[i + 1].h <= h) i++;
     const a = KEYS[i], b = KEYS[i + 1], k = THREE.MathUtils.smoothstep(h, a.h, b.h);
     const o = this._a;
-    for (const key of ['top', 'hor', 'hs', 'hg', 'lc']) (o[key] ||= new THREE.Color()).lerpColors(a[key], b[key], k);
-    o.hi = a.hi + (b.hi - a.hi) * k; o.li = a.li + (b.li - a.li) * k; o.night = a.night + (b.night - a.night) * k;
+    for (const key of ['hor', 'hs', 'hg', 'lc', 'ac']) (o[key] ||= new THREE.Color()).lerpColors(a[key], b[key], k);
+    for (const key of ['hi', 'li', 'ai', 'dusk', 'night']) o[key] = a[key] + (b[key] - a[key]) * k;
+    o.top = o.hor; // (예전 코드 호환)
     return o;
   }
 
-  // 미니게임 무대에도 시간대 색을 입힘 (게임하기 어렵지 않게 월드보다 약하게)
-  // meta.indoor 인 게임(고척돔)은 조명이 일정해서 건너뜀
+  drawSky(dusk, night) {
+    const key = `${dusk.toFixed(2)},${night.toFixed(2)}`;
+    if (key === this.lastKey) return;
+    this.lastKey = key;
+    const g = this.sky.getContext('2d');
+    g.globalAlpha = 1; g.drawImage(this.layers.day, 0, 0);
+    if (dusk > 0) { g.globalAlpha = dusk; g.drawImage(this.layers.dusk, 0, 0); }
+    if (night > 0) { g.globalAlpha = night; g.drawImage(this.layers.night, 0, 0); }
+    g.globalAlpha = 1;
+    this.skyTex.needsUpdate = true;
+  }
+
+  // 미니게임 무대: 시간대 빛을 약하게만 입힘 (게임하기 어렵지 않게, 땅 색 보정은 끔)
   applyMini(g, hour) {
+    U.uDusk.value = 0;
     if (g.meta.indoor) return;
     const sc = g.scene;
     if (!g._dn) {
@@ -92,7 +113,7 @@ export class DayNight {
       g._dn = { L, bg: sc.background?.isColor ? sc.background.clone() : null, fog: sc.fog ? sc.fog.color.clone() : null };
     }
     if (!this.ref) { const r = this.sample(12); this.ref = { lc: r.lc.clone(), hs: r.hs.clone(), hg: r.hg.clone(), hi: r.hi, li: r.li }; }
-    const s = this.sample(hour), ref = this.ref, K = 0.7;
+    const s = this.sample(hour), ref = this.ref, K = 0.55;
     const ratio = (c, a, b) => c.set(Math.min(2, a.r / Math.max(0.02, b.r)), Math.min(2, a.g / Math.max(0.02, b.g)), Math.min(2, a.b / Math.max(0.02, b.b)));
     const tmp = this._t ||= new THREE.Color(), one = this._one ||= new THREE.Color(1, 1, 1);
     for (const l of g._dn.L) {
@@ -105,39 +126,32 @@ export class DayNight {
         l.o.intensity = l.i * (1 + (s.li / ref.li - 1) * K);
       }
     }
-    // 하늘: 원래 하늘색을 지금 시간대 하늘(지평선·위 중간)로 섞음
-    const sky = tmp.copy(s.hor).lerp(s.top, 0.45);
-    const mix = 0.2 + 0.65 * Math.max(s.night, Math.min(1, Math.abs(hour - 12.5) / 6)); // 한낮엔 원래 하늘 위주, 아침·저녁·밤엔 시간대 하늘 위주
-    if (g._dn.bg) sc.background.copy(g._dn.bg).lerp(sky, Math.min(0.85, mix));
-    if (g._dn.fog) sc.fog.color.copy(g._dn.fog).lerp(sky, Math.min(0.85, mix));
+    const sky = tmp.copy(s.hor);
+    const mix = Math.min(0.75, 0.15 + 0.6 * Math.max(s.night, s.dusk));
+    if (g._dn.bg) sc.background.copy(g._dn.bg).lerp(sky, mix);
+    if (g._dn.fog) sc.fog.color.copy(g._dn.fog).lerp(sky, mix);
   }
 
   update(hour, t, camPos) {
     const w = this.world, s = this.sample(hour);
-    this.u.top.value.copy(s.top); this.u.hor.value.copy(s.hor);
-    this.u.time.value = t;
     w.scene.fog.color.copy(s.hor);
+    w.scene.fog.near = 75 - 15 * s.dusk; w.scene.fog.far = 165 - 15 * s.dusk;
     w.hemi.color.copy(s.hs); w.hemi.groundColor.copy(s.hg); w.hemi.intensity = s.hi;
     w.sun.color.copy(s.lc); w.sun.intensity = s.li;
-    ST.night.value = s.night;
-    w.setLamps?.(s.night);
-    this.u.stars.value = Math.max(0, (s.night - 0.3) / 0.7);
+    w.amb.color.copy(s.ac); w.amb.intensity = s.ai;
+    U.night.value = s.night;
+    U.uDusk.value = s.dusk;
+    U.uNight.value = s.night;
+    w.setLamps?.(Math.max(s.dusk * 0.9, s.night));
+    this.drawSky(s.dusk, s.night);
 
-    // 해: 동(+x)에서 떠서 남쪽(+z) 하늘을 지나 서(-x)로 짐 / 달은 그 반대
+    // 빛 방향: 낮엔 해를 따라, 노을엔 원래 서울섬처럼 낮게 서쪽에서, 밤엔 달
     const day = (hour - SUNRISE) / (SUNSET - SUNRISE);
-    const sa = day * Math.PI;
-    const sunDir = this.u.sunDir.value.set(Math.cos(sa), Math.sin(sa) * 1.1, 0.55).normalize();
-    const nightLen = 24 - (SUNSET - SUNRISE);
-    const ma = (((hour - SUNSET + 24) % 24) / nightLen) * Math.PI;
-    const moonDir = this.u.moonDir.value.set(Math.cos(ma), Math.sin(ma) * 1.1, 0.4).normalize();
-    this.u.sunVis.value = THREE.MathUtils.smoothstep(sunDir.y, -0.12, 0.05);
-    this.u.moonVis.value = THREE.MathUtils.smoothstep(moonDir.y, -0.05, 0.1) * Math.min(1, s.night * 1.4);
-    this.u.sunCol.value.copy(s.lc);
-    // 그림자 방향: 낮엔 해, 밤엔 달 (너무 눕지 않게 높이 보정)
-    const L = sunDir.y > -0.02 ? sunDir : moonDir;
-    const dir = L.clone(); dir.y = Math.max(dir.y, 0.45); dir.normalize();
+    const sa = THREE.MathUtils.clamp(day, 0, 1) * Math.PI;
+    const dir = new THREE.Vector3(Math.cos(sa), Math.max(0.45, Math.sin(sa) * 1.1), 0.55).normalize();
+    const duskDir = new THREE.Vector3(-40, 16, -30).normalize();
+    dir.lerp(duskDir, s.dusk * (1 - s.night)).normalize();
     w.sunOffset.copy(dir.multiplyScalar(30));
-
-    if (camPos) this.dome.position.copy(camPos);
+    void t; void camPos;
   }
 }

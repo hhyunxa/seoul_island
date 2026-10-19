@@ -12,6 +12,8 @@ export const U = {
   uCurve: { value: 0 },
   stP: { value: new THREE.Vector3() }, stC: { value: new THREE.Vector3() }, stOn: { value: 0 },
   night: { value: 0 },
+  // 노을 색 보정 (원래 서울섬 '노을' 팔레트 쪽으로): 0 낮 ~ 1 노을·밤
+  uDusk: { value: 0 }, uNight: { value: 0 },
 };
 export const WORLD_CURVE = 0.0016;
 
@@ -55,7 +57,24 @@ function patch(sh) {
       mvPosition.y -= mvPosition.z * mvPosition.z * uCurve;
       gl_Position = projectionMatrix * mvPosition;`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\nuniform vec3 stP; uniform vec3 stC; uniform float stOn; varying vec3 vStW;')
+    .replace('#include <common>', `#include <common>
+      uniform vec3 stP; uniform vec3 stC; uniform float stOn; uniform float uDusk; uniform float uNight; varying vec3 vStW;
+      vec3 si_hsv(vec3 c) { vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0); vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g)); vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r)); float d = q.x - min(q.w, q.y); return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x); }
+      vec3 si_rgb(vec3 c) { vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0); vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www); return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y); }`)
+    .replace('#include <fog_fragment>', `
+      #ifndef NO_GRADE
+      if (uDusk > 0.001) {
+        vec3 hv = si_hsv(gl_FragColor.rgb);
+        float gw = smoothstep(0.16, 0.24, hv.x) * (1.0 - smoothstep(0.42, 0.48, hv.x)); // 초록 → 올리브·황금빛
+        float bw = smoothstep(0.45, 0.50, hv.x) * (1.0 - smoothstep(0.70, 0.76, hv.x)); // 파랑 → 연보라
+        vec3 dv = hv;
+        dv.x = mix(dv.x, mix(hv.x, 0.19, 0.6), gw); dv.y *= mix(1.0, 0.62, gw); dv.z = min(1.0, dv.z * mix(1.0, 1.12, gw));
+        dv.x = mix(dv.x, 0.69, bw); dv.y *= mix(1.0, 0.55, bw);
+        vec3 dc = si_rgb(dv) * vec3(1.0, 0.95, 0.9);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, dc, uDusk);
+      }
+      #endif
+      #include <fog_fragment>`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
       if (stOn > 0.5 && vStW.y > 0.35) {
         vec3 dd = stP - stC; float L = length(dd); vec3 n = dd / L;

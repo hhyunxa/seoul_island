@@ -162,7 +162,8 @@ export function buildTrees(world, map, list) {
 // 한강 다리: 물 위로 BRIDGE_H만큼 떠 있고, 양 끝은 비탈 → 수상택시가 다리 밑으로 지나감
 // 서울섬 다리처럼 하얀 상판 + 알록달록 난간 + 나무 기둥
 export const BRIDGE_H = 1.7, BRIDGE_RAMP = 3;
-const RAIL = ['#7fcb98', '#ff8fa3', '#c3a6ff', '#ffd166', '#7bc8f6'];
+// 원래 서울섬 다리 색: 마포 민트 · 한강 분홍 · 반포 연보라 (+ 새 다리들)
+const RAIL = { 양화대교: '#ffd166', 마포대교: '#7fcb98', 한강대교: '#ff8fa3', 반포대교: '#c3a6ff', 성수대교: '#7bc8f6', 잠실대교: '#ff9f43' };
 export function buildBridges(world, map) {
   const big = new Merger({ round: false }), deco = new Merger(), small = new Merger({ round: false });
   const isB = (tx, tz, kind) => tx >= 0 && tz >= 0 && tx < NX && tz < NZ && map.tile[tz * NX + tx] === T.BRIDGE && map.bkind[tz * NX + tx] === kind;
@@ -180,9 +181,9 @@ export function buildBridges(world, map) {
   world.bridgePiers = [];
   // 다리마다 난간 색
   const railOf = (x) => {
-    let bi = 0, bd = 1e9;
-    (map.bridgeInfo || []).forEach((b, i) => { const d = Math.abs((b.x0 + b.x1) / 2 - x); if (d < bd) { bd = d; bi = i; } });
-    return RAIL[bi % RAIL.length];
+    let name = '', bd = 1e9;
+    (map.bridgeInfo || []).forEach((b) => { const d = Math.abs((b.x0 + b.x1) / 2 - x); if (d < bd) { bd = d; name = b.name; } });
+    return RAIL[name] || '#ffd166';
   };
   const pierSpan = (tx, s, x) => {
     let e = s; while (isB(tx, e + 1, 1)) e++;
@@ -217,7 +218,7 @@ export function buildBridges(world, map) {
         if (isB(nx, tz, 1)) continue;
         for (let q = 0; q < 2; q++) { const zq = tz - HZ + 0.25 + q * 0.5; big.box(0.16, 0.14, 0.52, rc, x + sx * 0.44, hAt(k, zq) + 0.62, zq); }
         if (tz % 2 === 0) deco.box(0.18, 0.62, 0.18, '#c99468', x + sx * 0.44, h + 0.31, z);
-        if (tz % 4 === 0) deco.sphere(0.14, '#ffe7a8', x + sx * 0.44, h + 0.75, z);
+        if (tz % 4 === 0) { deco.sphere(0.14, '#ffe7a8', x + sx * 0.44, h + 0.75, z); world.glowSpots?.push([x + sx * 0.44, h + 0.75, z, 1.8, '#ffb867']); }
       }
       if (!isB(tx - 1, tz, 1) && !isB(tx, tz - 1, 1)) pierSpan(tx, tz, x);
     } else {

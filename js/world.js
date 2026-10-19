@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rng, canvasTexture, waterTexture, plankTexture, signTexture, GROUND } from './textures.js';
-import { toonMat, rbox, soft, basic, blobShadow, U } from './toon.js';
+import { toonMat, rbox, soft, basic, blobShadow, stylize, U } from './toon.js';
 import { Avatar, npcLook } from './character.js';
 import { SeoulMap, T, WK, ZN, NX, NZ, HX, HZ, GU } from './seoulMap.js';
 import { buildTrees, buildBridges } from './city.js';
@@ -132,6 +132,7 @@ export class World {
     this.markers = [];
     this.signSpots = [];
     this.villagers = [];
+    this.glowSpots = []; // [x, y, z, 크기, 색] 노을에 켜지는 불빛
     this.map = new SeoulMap();
     this.occ = new Uint8Array(NX * NZ); // 건물 칸 (서울섬엔 없음)
     this.spawn = new THREE.Vector3(1.6, 0, -1.4); // 광화문광장
@@ -331,6 +332,7 @@ export class World {
     }
     for (const list of cells.values()) buildTrees(this, this.map, list);
     this.buildFlowers();
+    this.buildGlows();
   }
 
   addMarker(x, y, z) {
@@ -397,6 +399,7 @@ export class World {
       this.addMarker(ox, 3.0, oz + 0.9);
       this.interactables.push({ x: ox, z: oz + 1.0, r: 1.9, label: '오리배 레이스', kind: 'minigame', game: 'duckboat', ret: [ox, oz] });
     }
+    this.buildFountain();
     // 다리 이름표 (북단)
     for (const b of m.bridgeInfo) {
       const sg = makeSign(b.name);
@@ -405,6 +408,39 @@ export class World {
       sg.position.set(x, 0, z); sg.scale.setScalar(0.8); s.add(sg);
       this.addCollider({ type: 'c', x, z, r: 0.5 });
       this.signSpots.push({ x, z });
+    }
+  }
+
+  // ---------- 반포한강공원 달빛무지개분수 (원래 서울섬 반포 무지개다리) ----------
+  // 다리 양옆에서 강으로 떨어지는 물줄기: 낮엔 하얀 물, 노을이 지면 무지개색으로 빛남
+  buildFountain() {
+    const b = this.map.bridgeInfo.find((x) => x.name === '반포대교');
+    if (!b) return;
+    const RAINBOW = ['#ff8fa3', '#ffc86b', '#ffe07a', '#9ee0a8', '#8fd3ff', '#b8a6ff'];
+    const cx = (b.x0 + b.x1) / 2, half = (b.x1 - b.x0) / 2;
+    const z0 = b.z0 + 3.5, z1 = b.z1 - 3.5, n = Math.max(4, Math.floor((z1 - z0) / 1.6));
+    this.fountain = [];
+    let ci = 0;
+    for (const side of [-1, 1]) for (let k = 0; k <= n; k++) {
+      const z = z0 + ((z1 - z0) * k) / n, x0 = cx + side * (half + 0.05);
+      const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x0, 1.45, z), new THREE.Vector3(cx + side * (half + 2.2), 3.0, z + 0.5), new THREE.Vector3(cx + side * (half + 3.8), -0.4, z + 1.1));
+      const col = RAINBOW[ci++ % RAINBOW.length];
+      const m = basic({ color: '#ffffff', transparent: true, opacity: 0.75, depthWrite: false });
+      m.defines = { NO_GRADE: '' };
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.08, 5, false), m);
+      this.scene.add(tube);
+      this.fountain.push({ m, col: new THREE.Color(col), ph: k * 0.7 + side });
+      this.glowSpots.push([cx + side * (half + 2.2), 2.4, z + 0.5, 2.4, col]);
+    }
+    // 안내판 (남쪽 강변)
+    const sx = b.x1 + 1.6, sz = b.z1 + 1.6;
+    if (this.canWalk(sx, sz, 0.6)) {
+      const sg = makeSign('달빛무지개분수'); sg.position.set(sx, 0, sz); sg.rotation.y = Math.PI; this.scene.add(sg);
+      this.addCollider({ type: 'c', x: sx, z: sz, r: 0.5 });
+      this.signSpots.push({ x: sx, z: sz });
+      const name = '반포한강공원 달빛무지개분수 (서초구)';
+      this.interactables.push({ x: sx, z: sz - 0.7, r: 1.5, label: '달빛무지개분수 안내판', kind: 'dialog', name, tag: '#9B7FD9', lines: ['반포대교 양옆으로 물줄기가 쏟아지는 달빛무지개분수예요.\n세계에서 가장 긴 교량 분수로 기네스북에도 올랐어요.', '낮엔 하얀 물줄기지만, 노을이 지면 무지개색으로 반짝여요.\n해 질 녘에 꼭 다시 와 보세요!'] });
+      this.landmarkPins?.push({ x: sx, z: sz, name: '달빛무지개분수' });
     }
   }
 
@@ -425,29 +461,49 @@ export class World {
       spots.push({ x, z });
       this.addCollider({ type: 'c', x, z, r: 0.14 });
     }
+    // 원래 서울섬 가로등: 가는 나무 기둥 + 크림색 동그란 등, 노을이 지면 주황빛이 번짐
     const n = spots.length;
-    const pole = new THREE.CylinderGeometry(0.06, 0.07, 2.2, 8); pole.translate(0, 1.1, 0);
-    const bulb = new THREE.SphereGeometry(0.16, 12, 8); bulb.translate(0, 2.3, 0);
-    const halo = new THREE.SphereGeometry(0.75, 12, 8); halo.translate(0, 2.3, 0);
-    const pool = new THREE.CircleGeometry(1.6, 16); pool.rotateX(-Math.PI / 2); pool.translate(0, 0.04, 0);
-    this.lampBulb = basic({ color: '#fff3d6' });
-    this.lampHalo = basic({ color: '#ffb867', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
-    this.lampPool = basic({ color: '#ffc46a', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const pole = new THREE.CylinderGeometry(0.06, 0.06, 2.2, 6); pole.translate(0, 1.1, 0);
+    const bulb = new THREE.SphereGeometry(0.14, 8, 6); bulb.translate(0, 2.3, 0);
+    this.lampBulb = basic({ color: '#ffe7a8' });
     const dummy = new THREE.Object3D();
-    this.lampMeshes = [[pole, mat('#c99468')], [bulb, this.lampBulb], [halo, this.lampHalo], [pool, this.lampPool]].map(([g, mt]) => {
+    this.lampMeshes = [[pole, mat('#c99468')], [bulb, this.lampBulb]].map(([g, mt]) => {
       const im = new THREE.InstancedMesh(g, mt, n);
       spots.forEach((p, i) => { dummy.position.set(p.x, 0, p.z); dummy.updateMatrix(); im.setMatrixAt(i, dummy.matrix); });
       im.frustumCulled = false;
       this.scene.add(im); return im;
     });
+    for (const p of spots) this.glowSpots.push([p.x, 2.3, p.z, 2.4, '#ffb867']);
   }
-  setLamps(night) {
+  // 불빛 번짐 (원래 서울섬 glow 스프라이트를 한꺼번에 그리는 점들로)
+  buildGlows() {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'), rg = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    rg.addColorStop(0, 'rgba(255,255,255,1)'); rg.addColorStop(0.3, 'rgba(255,255,255,0.5)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, 64, 64);
+    this.glowTex = canvasTexture(c);
+    // 크기별로 나눠서 (PointsMaterial은 크기가 하나)
+    const bySize = new Map();
+    for (const sp of this.glowSpots) { const k = sp[3]; if (!bySize.has(k)) bySize.set(k, []); bySize.get(k).push(sp); }
+    this.glowMats = [];
+    for (const [size, list] of bySize) {
+      const pos = new Float32Array(list.length * 3), col = new Float32Array(list.length * 3), cc = new THREE.Color();
+      list.forEach((sp, i) => { pos.set([sp[0], sp[1], sp[2]], i * 3); cc.set(sp[4]); col.set([cc.r, cc.g, cc.b], i * 3); });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const m = stylize(new THREE.PointsMaterial({ size, map: this.glowTex, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+      m.defines = { NO_GRADE: '' }; // 불빛 색은 노을 보정에서 빼기
+      const pts = new THREE.Points(geo, m); pts.frustumCulled = false; pts.renderOrder = 3;
+      this.scene.add(pts); this.glowMats.push(m);
+    }
+  }
+  // 노을·밤 정도(0~1)에 맞춰 불빛 켜기
+  setLamps(on) {
     if (!this.lampBulb) return;
-    const on = THREE.MathUtils.smoothstep(night, 0.3, 0.7);
-    this.lampBulb.color.set('#fff3d6').lerp(new THREE.Color('#ffd27a'), on);
-    this.lampHalo.opacity = on * 0.45;
-    this.lampPool.opacity = on * 0.35;
-    this.lampMeshes[2].visible = this.lampMeshes[3].visible = on > 0.01;
+    const k = THREE.MathUtils.smoothstep(on, 0.25, 0.6);
+    this.lampBulb.color.set('#ffe7a8').lerp(new THREE.Color('#fff4d0'), k);
+    for (const m of this.glowMats || []) { m.opacity = k * 0.85; m.visible = k > 0.01; }
   }
 
   // ---------- 나무 흩뿌리기 (숲은 빽빽하게, 공원·길가는 적당히, 빈 풀밭은 드문드문) ----------
@@ -483,12 +539,12 @@ export class World {
       const gname = m.gu[k] >= 0 ? GU[m.gu[k]].name : '';
       const pick = () => { const v = r(); if (BLOSSOM.has(gname) && v < 0.4) return 'maple'; if (GINKGO.has(gname) && v < 0.3) return 'ginkgo'; return v < 0.86 ? 'round' : v < 0.94 ? 'maple' : 'ginkgo'; };
       if (zone === ZN.FOREST) {
-        if (r() < 0.3) plant(x, z, r() < 0.45 ? 'pine' : 'round', 0.9 + r() * 0.35);
+        if (r() < 0.11) plant(x, z, r() < 0.45 ? 'pine' : 'round', 0.9 + r() * 0.35);
         continue;
       }
-      if (zone === ZN.PARK) { if (r() < 0.1) plant(x, z, pick(), 0.85 + r() * 0.3); continue; }
-      if (nearWide(tx, tz)) { if ((tx + tz) % 4 === 0 && r() < 0.7) plant(x, z, pick(), 0.8 + r() * 0.15); continue; }
-      if (r() < 0.018) plant(x, z, pick(), 0.85 + r() * 0.35);
+      if (zone === ZN.PARK) { if (r() < 0.05) plant(x, z, pick(), 0.85 + r() * 0.3); continue; }
+      if (nearWide(tx, tz)) { if ((tx + tz) % 7 === 0 && r() < 0.45) plant(x, z, pick(), 0.8 + r() * 0.15); continue; }
+      if (r() < 0.006) plant(x, z, pick(), 0.85 + r() * 0.35);
     }
   }
 
@@ -496,7 +552,7 @@ export class World {
   buildFlowers() {
     const r = this.r, m = this.map;
     const fpos = [];
-    for (let i = 0; i < 40000 && fpos.length < 9000; i++) {
+    for (let i = 0; i < 40000 && fpos.length < 6000; i++) {
       const x = (r() - 0.5) * NX, z = (r() - 0.5) * NZ;
       const [tx, tz] = m.t(x, z);
       if (!m.inb(tx, tz)) continue;
@@ -622,6 +678,10 @@ export class World {
     // 멀리 있는 나무 구역은 안 그림 (휘는 지평선 때문에 자동 컬링 대신 거리로)
     if (playerPos) for (const im of this.treeMeshes || []) { const c = im.userData.c; im.visible = Math.hypot(c[0] - playerPos.x, c[1] - playerPos.z) < 125; }
     for (const mk of this.markers) { mk.position.y = mk.userData.y + Math.sin(t * 3) * 0.15; mk.rotation.y = t * 2; }
+    if (this.fountain) {
+      const k = THREE.MathUtils.smoothstep(U.uDusk.value, 0.3, 0.9);
+      for (const f of this.fountain) { f.m.color.setRGB(1, 1, 1).lerp(f.col, k); f.m.opacity = (0.62 + 0.25 * Math.sin(t * 3 + f.ph)) * (0.85 + 0.15 * k); }
+    }
     for (const b of this.duckBoats || []) { b.position.y = -0.12 + Math.sin(t * 1.6 + b.position.x) * 0.05; b.rotation.z = Math.sin(t * 1.2 + b.position.x) * 0.05; }
     // 닭
     for (const a of this.animals) {

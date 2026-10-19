@@ -137,7 +137,7 @@ function setMode(m) {
   $('countdown').classList.add('hidden');
   closeDialog();
   U.uCurve.value = m === 'mini' ? 0 : WORLD_CURVE;
-  if (m === 'mini') U.stOn.value = 0; // 월드의 '가리면 뚫어 보이기'가 미니게임 무대에 남지 않게
+  if (m === 'mini') { U.stOn.value = 0; U.uDusk.value = 0; } // 월드의 '가리면 뚫어 보이기'가 미니게임 무대에 남지 않게
   if (m === 'make') { player?.position.copy(world.spawn); refreshMake(); }
   if (m === 'world') {
     if (prev === 'make') rebuildPlayer();
