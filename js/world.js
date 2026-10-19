@@ -214,6 +214,14 @@ export class World {
     void m;
     return out;
   }
+  softField(pred) {
+    const raw = new Float32Array(NX * NZ), tmp = new Float32Array(NX * NZ), out = new Float32Array(NX * NZ);
+    for (let k = 0; k < NX * NZ; k++) raw[k] = pred(k) ? 1 : 0;
+    const at = (a, x, z) => a[Math.min(NZ - 1, Math.max(0, z)) * NX + Math.min(NX - 1, Math.max(0, x))];
+    for (let tz = 0; tz < NZ; tz++) for (let tx = 0; tx < NX; tx++) tmp[tz * NX + tx] = (at(raw, tx - 1, tz) + 2 * raw[tz * NX + tx] + at(raw, tx + 1, tz)) / 4;
+    for (let tz = 0; tz < NZ; tz++) for (let tx = 0; tx < NX; tx++) out[tz * NX + tx] = (at(tmp, tx, tz - 1) + 2 * tmp[tz * NX + tx] + at(tmp, tx, tz + 1)) / 4;
+    return out;
+  }
   // 픽셀 (px, pz) 자리의 값 (타일 중심 사이를 이어 붙임)
   static sample(f, fx, fz) {
     const x = Math.min(NX - 1.001, Math.max(0, fx - 0.5)), z = Math.min(NZ - 1.001, Math.max(0, fz - 0.5));
@@ -225,7 +233,8 @@ export class World {
     const m = this.map, P = 8, W = NX * P, H = NZ * P;
     const land = (k) => m.tile[k] !== T.WATER && m.tile[k] !== T.BRIDGE;
     // 지천(중랑천·안양천·청계천…)·석촌호수: 1~2칸이라 둥글게 다듬으면 땅에 묻혀 버려서, 다듬지 않은 값으로 따로 파냄
-    const STREAM = this.field((k) => m.wk[k] === WK.STREAM && (m.tile[k] === T.WATER || m.tile[k] === T.BRIDGE), 0);
+    // 가운데에 무게를 둔 이웃 평균(1:2:1)으로 계단 모양만 다듬음 → 물이 실제 물 칸과 딱 맞게
+    const STREAM = this.softField((k) => m.wk[k] === WK.STREAM && (m.tile[k] === T.WATER || m.tile[k] === T.BRIDGE));
     this.streamField = STREAM;
     const F = {
       land: this.field(land),
@@ -264,7 +273,7 @@ export class World {
       const fz = (py + 0.5) / P;
       for (let px = 0; px < W; px++) {
         const fx = (px + 0.5) / P, o = (py * W + px) * 4;
-        if (World.sample(F.land, fx, fz) < 0.5 || World.sample(STREAM, fx, fz) > 0.3) { d[o + 3] = 0; continue; }
+        if (World.sample(F.land, fx, fz) < 0.5 || World.sample(STREAM, fx, fz) > 0.4) { d[o + 3] = 0; continue; }
         let pt = PT.grass;
         for (const [name, thr] of order) if (World.sample(F[name], fx, fz) > thr) { pt = PT[name]; break; }
         const q = ((py & 63) * 64 + (px & 63)) * 4;
@@ -296,9 +305,9 @@ export class World {
       this.scene.add(mesh);
       return mesh;
     };
-    ring(1, 0.32, '#f8d585', -0.1, 0.4);
-    ring(1, 0.14, '#ffffff', -0.22, 0.5);
-    this.shallow = ring(2, 0.1, '#62cde8', -0.4, 0.62);
+    ring(1, 0.32, '#f8d585', -0.1, 0.47);
+    ring(1, 0.14, '#ffffff', -0.22, 0.3); // 지천엔 물거품을 두르지 않음 (좁아서 양쪽 거품이 겹침)
+    this.shallow = ring(2, 0.1, '#62cde8', -0.4, 0.3);
   }
 
   buildWater() {
