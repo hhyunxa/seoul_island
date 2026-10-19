@@ -224,6 +224,9 @@ export class World {
   buildGround() {
     const m = this.map, P = 8, W = NX * P, H = NZ * P;
     const land = (k) => m.tile[k] !== T.WATER && m.tile[k] !== T.BRIDGE;
+    // 지천(중랑천·안양천·청계천…)·석촌호수: 1~2칸이라 둥글게 다듬으면 땅에 묻혀 버려서, 다듬지 않은 값으로 따로 파냄
+    const STREAM = this.field((k) => m.wk[k] === WK.STREAM && (m.tile[k] === T.WATER || m.tile[k] === T.BRIDGE), 0);
+    this.streamField = STREAM;
     const F = {
       land: this.field(land),
       forest: this.field((k) => land(k) && m.zone[k] === ZN.FOREST && m.tile[k] === T.GRASS, 2),
@@ -261,7 +264,7 @@ export class World {
       const fz = (py + 0.5) / P;
       for (let px = 0; px < W; px++) {
         const fx = (px + 0.5) / P, o = (py * W + px) * 4;
-        if (World.sample(F.land, fx, fz) < 0.5) { d[o + 3] = 0; continue; }
+        if (World.sample(F.land, fx, fz) < 0.5 || World.sample(STREAM, fx, fz) > 0.3) { d[o + 3] = 0; continue; }
         let pt = PT.grass;
         for (const [name, thr] of order) if (World.sample(F[name], fx, fz) > thr) { pt = PT[name]; break; }
         const q = ((py & 63) * 64 + (px & 63)) * 4;
@@ -277,14 +280,15 @@ export class World {
     this.groundMesh = ground;
 
     // 섬 둘레: 모래 → 하얀 물거품 → 얕은 물 (원래 서울섬처럼 겹겹이)
-    const ring = (rad, thr, color, y, Q = 4) => {
+    const ring = (rad, thr, color, y, cut, Q = 4) => {
       const f = this.field(land, rad), w = NX * Q, h = NZ * Q;
       const cc = document.createElement('canvas'); cc.width = w; cc.height = h;
       const g = cc.getContext('2d'), im = g.createImageData(w, h), dd = im.data;
       for (let py = 0; py < h; py++) for (let px = 0; px < w; px++) {
         const o = (py * w + px) * 4;
         dd[o] = dd[o + 1] = dd[o + 2] = 255;
-        dd[o + 3] = World.sample(f, (px + 0.5) / Q, (py + 0.5) / Q) > thr ? 255 : 0;
+        const fx = (px + 0.5) / Q, fz = (py + 0.5) / Q;
+        dd[o + 3] = World.sample(f, fx, fz) > thr && World.sample(STREAM, fx, fz) <= cut ? 255 : 0;
       }
       g.putImageData(im, 0, 0);
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(NX, NZ, 66, 55), toonMat({ color, map: canvasTexture(cc), alphaTest: 0.5 }));
@@ -292,9 +296,9 @@ export class World {
       this.scene.add(mesh);
       return mesh;
     };
-    ring(1, 0.32, '#f8d585', -0.1);
-    ring(1, 0.14, '#ffffff', -0.22);
-    this.shallow = ring(2, 0.1, '#62cde8', -0.4);
+    ring(1, 0.32, '#f8d585', -0.1, 0.4);
+    ring(1, 0.14, '#ffffff', -0.22, 0.5);
+    this.shallow = ring(2, 0.1, '#62cde8', -0.4, 0.62);
   }
 
   buildWater() {
